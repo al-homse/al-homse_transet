@@ -180,7 +180,7 @@ class _TripScreenState extends State<TripScreen> {
           );
         }
 
-        // الحالة الثانية: جدول المواعيد (بدون عرض السعر، مع زر تحديث)
+        // الحالة الثانية: جدول المواعيد
         List<dynamic> filteredTrips = allTrips
             .where((trip) => trip['route']?.toString() == widget.routeName)
             .toList();
@@ -227,6 +227,7 @@ class _TripScreenState extends State<TripScreen> {
                       itemBuilder: (context, index) {
                         final trip = filteredTrips[index];
                         
+                        String tripId = trip['trip_id']?.toString() ?? 'TRP-001';
                         String departureTime = trip['departure_time']?.toString() ?? 'غير محدد';
                         String vehicleId = trip['vehicle_id']?.toString() ?? trip['bus_number']?.toString() ?? 'باص';
                         int availableSeats = int.tryParse(trip['available_seats']?.toString() ?? '0') ?? 0;
@@ -264,7 +265,6 @@ class _TripScreenState extends State<TripScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  // تم حذف السعر من هنا بناءً على طلبك، والإبقاء على المركبة فقط
                                   Text(
                                     'المركبة: $vehicleId',
                                     style: TextStyle(fontSize: 14, color: Colors.grey[700]),
@@ -319,6 +319,7 @@ class _TripScreenState extends State<TripScreen> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => BookingScreen(
+                                                tripId: tripId, // تم إضافة المعرف هنا بنجاح
                                                 tripTime: departureTime,
                                                 busNumber: vehicleId,
                                                 price: price,
