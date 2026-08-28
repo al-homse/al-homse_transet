@@ -31,7 +31,7 @@ class ApiService {
       }
     } catch (e) {
       print('خطأ في جلب البيانات: $e');
-      // إعادة طرح الخطأ ليلتقطه FutureBuilder ويظهره للمستخدم بدلاً من افتراض قائمة فارغة
+      // إعادة طرح الخطأ ليلتقطه FutureBuilder ويظهره للمستخدم
       rethrow; 
     }
   }
@@ -70,6 +70,67 @@ class ApiService {
       return false;
     } catch (e) {
       print('خطأ في عملية الحجز: $e');
+      return false;
+    }
+  }
+
+  // =================================================================
+  // 3. دالة تسجيل دخول الزبون (التحقق + تحديث الحالة والعداد)
+  // =================================================================
+  static Future<bool> loginCustomer({
+    required String identifier, // رقم الهاتف أو الاسم
+    required String password,   // كلمة المرور (رقم الهاتف)
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(webAppUrl),
+        headers: {'Content-Type': 'text/plain;charset=UTF-8'},
+        body: jsonEncode({
+          'action': 'loginCustomer',
+          'identifier': identifier,
+          'password': password,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 302) {
+        final data = jsonDecode(response.body);
+        // التحقق من حالة الرد القادم من سكربت جوجل
+        return data['status'] == 'success' || data['result'] == 'success';
+      }
+      return false;
+    } catch (e) {
+      print('خطأ في تسجيل الدخول: $e');
+      return false;
+    }
+  }
+
+  // =================================================================
+  // 4. دالة إنشاء حساب جديد وإضافته لجدول Customer
+  // =================================================================
+  static Future<bool> registerCustomer({
+    required String passengerName,
+    required String phoneNumber,
+    required String preferredClass,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(webAppUrl),
+        headers: {'Content-Type': 'text/plain;charset=UTF-8'},
+        body: jsonEncode({
+          'action': 'registerCustomer',
+          'passenger_name': passengerName,
+          'phone_number': phoneNumber,
+          'preferred_class': preferredClass,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 302) {
+        final data = jsonDecode(response.body);
+        return data['status'] == 'success' || data['result'] == 'success';
+      }
+      return false;
+    } catch (e) {
+      print('خطأ في إنشاء الحساب: $e');
       return false;
     }
   }

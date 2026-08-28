@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
-import 'admin_dashboard.dart'; // استيراد لوحة تحكم الأدمن
+import 'admin_dashboard.dart';
+import '../api_service.dart';
+import 'trip_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -12,13 +14,93 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  void _handleLogin() async {
+    String inputUser = _phoneController.text.trim();
+    String inputPass = _passwordController.text.trim();
+
+    if (inputUser.isEmpty || inputPass.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الرجاء إدخال البيانات المطلوبة')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. التحقق من الأدمن
+      if (inputUser == 'admin' && inputPass == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminDashboard()),
+        );
+        return;
+      }
+
+      // 2. التحقق الحقيقي من جدول Customer في جوجل شيت (يعيد true إذا وُجد، أو false إذا لم يوجد)
+      bool loginSuccess = await ApiService.loginCustomer(
+        identifier: inputUser, 
+        password: inputPass,
+      );
+
+      if (loginSuccess) {
+        // حالة ناجحة حقيقية
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم تسجيل دخولك بنجاح!')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const TripScreen()),
+        );
+      } else {
+        // حالة خاطئة / غير مسجل (تتم محاكاة الـ False وإظهار تنبيه التسجيل)
+        _showNotRegisteredDialog();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('حدث خطأ أثناء الاتصال: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showNotRegisteredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حساب غير مسجل', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('حساب حضرتكم غير مسجل على خوادمنا، يرجى إنشاء حساب جديد.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[900]),
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RegisterScreen()),
+              );
+            },
+            child: const Text('إنشاء حساب', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // الخلفية الموحدة للتطبيق
           SizedBox.expand(
             child: Image.asset(
               'assets/images/farewell.png',
@@ -29,7 +111,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           Container(color: Colors.black.withOpacity(0.65)),
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
@@ -54,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     TextField(
                       controller: _phoneController,
-                      keyboardType: TextInputType.text, // عدلناه لـ text ليدعم كلمة admin
+                      keyboardType: TextInputType.text,
                       decoration: InputDecoration(
                         labelText: 'رقم الهاتف أو اسم المستخدم',
                         prefixIcon: const Icon(Icons.person),
@@ -66,47 +147,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
-                        labelText: 'كلمة المرور',
+                        labelText: 'كلمة المرور (رقم الهاتف)',
                         prefixIcon: const Icon(Icons.lock),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                     const SizedBox(height: 25),
-                    // زر تسجيل الدخول (مع التحقق من الأدمن والمستخدم)
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[900],
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: () {
-                        String inputUser = _phoneController.text.trim();
-                        String inputPass = _passwordController.text.trim();
-
-                        if (inputUser.isNotEmpty && inputPass.isNotEmpty) {
-                          // شرط التحقق من حساب الأدمن (يمكن لاحقاً جلبه من قاعدة البيانات)
-                          if (inputUser == 'admin' && inputPass == 'admin') {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const AdminDashboard()),
-                            );
-                          } else {
-                            // تسجيل دخول مستخدم عادي
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('تم تسجيل الدخول بنجاح!')),
-                            );
-                            // هنا يمكنك توجيهه للشاشة الرئيسية لاحقاً
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('الرجاء إدخال البيانات المطلوبة')),
-                          );
-                        }
-                      },
-                      child: const Text('دخول', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
-                    ),
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[900],
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _handleLogin,
+                            child: const Text('دخول', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
                     const SizedBox(height: 15),
-                    // زر الانتقال إلى شاشة إنشاء حساب
                     TextButton(
                       onPressed: () {
                         Navigator.push(

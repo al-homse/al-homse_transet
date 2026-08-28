@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../api_service.dart'; // استيراد خدمة الـ API
+import 'trip_screen.dart'; // الانتقال لشاشة الرحلات عند النجاح
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -11,6 +13,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  String _preferredClass = 'VIP'; // الفئة المفضلة الافتراضية
+  bool _isLoading = false;
+
+  void _handleRegister() async {
+    String name = _nameController.text.trim();
+    String phone = _phoneController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (name.isEmpty || phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('الرجاء إكمال جميع الحقول المطلوبة')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // إرسال البيانات الحقيقية إلى جدول Customer عبر الـ ApiService
+      bool success = await ApiService.registerCustomer(
+        passengerName: name,
+        phoneNumber: phone,
+        preferredClass: _preferredClass,
+      );
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إنشاء الحساب وتسجيل الدخول بنجاح!')),
+        );
+        
+        // الانتقال لشاشة الرحلات وحذف شاشات الدخول والتسجيل من التراكم
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const TripScreen()),
+          (route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('رقم الهاتف مسجل مسبقاً أو حدث خطأ في الخادم')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ في الاتصال: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,31 +137,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
-                    const SizedBox(height: 25),
-                    // زر إتمام التسجيل والربط
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[900],
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    const SizedBox(height: 15),
+                    // حقل اختيار الفئة المفضلة ليتطابق مع جدول شيت Customer
+                    DropdownButtonFormField<String>(
+                      value: _preferredClass,
+                      items: ['VIP', 'Standard', 'Economy']
+                          .map((cls) => DropdownMenuItem(value: cls, child: Text(cls)))
+                          .toList(),
+                      onChanged: (val) => setState(() => _preferredClass = val!),
+                      decoration: InputDecoration(
+                        labelText: 'الفئة المفضلة',
+                        prefixIcon: const Icon(Icons.star),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: () {
-                        if (_nameController.text.isNotEmpty && 
-                            _phoneController.text.isNotEmpty && 
-                            _passwordController.text.isNotEmpty) {
-                          // هنا سيتم حفظ الحساب (قاعدة بيانات أو شيت)
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('تم إنشاء الحساب بنجاح! يمكنك تسجيل الدخول الآن')),
-                          );
-                          Navigator.pop(context); // العودة لشاشة تسجيل الدخول
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('الرجاء إكمال جميع الحقول المطلوبة')),
-                          );
-                        }
-                      },
-                      child: const Text('تسجيل الحساب', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
+                    const SizedBox(height: 25),
+                    
+                    // زر إتمام التسجيل والربط بالحقيقي
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[900],
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _handleRegister,
+                            child: const Text('تسجيل الحساب', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
                   ],
                 ),
               ),
