@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BookingScreen extends StatefulWidget {
   final String tripTime;
@@ -34,15 +36,18 @@ class _BookingScreenState extends State<BookingScreen> {
   final String driverName = 'أبو أحمد الحمصي';
   final String driverPhone = '+963 933 123 456';
 
+  // رابط النشر الخاص بالسكريبت الخاص بك
+  final String scriptUrl = 'https://script.google.com/macros/s/AKfycbycasw7Usvui5S2UO5m3mRDONR9FBFS7qFzB1PHEXw2dd4tIRynDCA6VSqvXLct5Ghs/exec';
+
   @override
   void initState() {
     super.initState();
     
-    // تنظيف وتحويل السعر القادم من قاعدة البيانات (مثال: إزالة الحروف أو الفواصل إن وجدت)
+    // تنظيف وتحويل السعر القادم من قاعدة البيانات
     double basePrice = double.tryParse(widget.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 70000;
-    double businessPrice = basePrice + 30000; // حساب سعر رجال الأعمال بناءً على السعر الأساسي أو قاعدة البيانات
+    double businessPrice = basePrice + 30000;
 
-    // تجهيز قائمة الفئات ديناميكياً بناءً على القيم القادمة من قاعدة البيانات
+    // تجهيز قائمة الفئات ديناميكياً
     categoriesList = [
       {
         'key': 'Standard',
@@ -65,9 +70,39 @@ class _BookingScreenState extends State<BookingScreen> {
     return input.split('').reversed.join('');
   }
 
+  // دالة إرسال الحجز إلى جوجل شيت
+  Future<void> sendBookingToGoogleSheet({
+    required String passengerName,
+    required String passengerPhone,
+    required String finalPrice,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(scriptUrl),
+        body: jsonEncode({
+          "action": "addBooking",
+          "trip_id": widget.tripTime,
+          "phone_number": passengerPhone,
+          "passenger_name": passengerName,
+          "seat_number": "1",
+          "ticket_class": selectedCategory,
+          "ticket_price": finalPrice,
+          "payment_status": selectedPaymentMethod,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print("تم إرسال الحجز بنجاح إلى جدول البيانات!");
+      } else {
+        print("فشل الإرسال: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("حدث خطأ أثناء الاتصال: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // الحصول على بيانات الفئة المكتوبة حالياً وسعرها ديناميكياً
     final currentCategoryData = categoriesList.firstWhere(
       (cat) => cat['key'] == selectedCategory,
       orElse: () => categoriesList[0],
@@ -203,7 +238,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 3. القائمة المنسدلة المرتبطة بقاعدة البيانات للفئات والأسعار
+                // 3. القائمة المنسدلة للفئات والأسعار
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
@@ -213,7 +248,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('اختر فئة الحجز (من قاعدة البيانات):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      const Text('اختر فئة الحجز:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       DropdownButton<String>(
                         value: selectedCategory,
                         isExpanded: true,
@@ -279,7 +314,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (bookingType == 'other' && (_otherNameController.text.isEmpty || _otherPhoneController.text.isEmpty)) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('الرجاء إدخال اسم ورقم هاتف الراكب أولاً!')),
@@ -287,6 +322,24 @@ class _BookingScreenState extends State<BookingScreen> {
                       return;
                     }
 
+                    // مؤشر تحميل أثناء الإرسال
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => const Center(child: CircularProgressIndicator()),
+                    );
+
+                    // إرسال البيانات لجوجل شيت
+                    await sendBookingToGoogleSheet(
+                      passengerName: passengerName,
+                      passengerPhone: passengerPhone,
+                      finalPrice: finalPrice,
+                    );
+
+                    // إغلاق مؤشر التحميل
+                    Navigator.pop(context);
+
+                    // إظهار نافذة تفاصيل الحجز
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -317,7 +370,7 @@ class _BookingScreenState extends State<BookingScreen> {
                             const SizedBox(height: 6),
                             Text('👨‍✈️ السائق: $driverName (${reverseNumbers(driverPhone)})'),
                             const Divider(height: 20),
-                            const Text('تم تسجيل الحجز بنجاح. رافقتكم السلامة!', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                            const Text('تم تسجيل الحجز بنجاح في النظام. رافقتكم السلامة!', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           ],
                         ),
                         actions: [
@@ -346,6 +399,5 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  // متغير طريقة الدفع
   String selectedPaymentMethod = 'الدفع عند الصعود';
 }
