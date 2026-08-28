@@ -319,10 +319,11 @@ class _TripScreenState extends State<TripScreen> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => BookingScreen(
-                                                tripId: tripId, // تم إضافة المعرف هنا بنجاح
+                                                tripId: tripId,
                                                 tripTime: departureTime,
                                                 busNumber: vehicleId,
                                                 price: price,
+                                                availableSeats: availableSeats, // تم تضمين هذا المتغير المطلوب نهائياً
                                               ),
                                             ),
                                           );
