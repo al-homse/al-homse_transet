@@ -3,15 +3,21 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class BookingScreen extends StatefulWidget {
+  final String tripId;          // معرف الرحلة الفعلي (مثل TRP-001)
   final String tripTime;
   final String busNumber;
-  final String price; // السعر القادم من قاعدة البيانات (مثل Standard أو السعر الأساسي)
+  final String price;           // السعر القادم من قاعدة البيانات
+  final int availableSeats;     // المقاعد المتاحة ديناميكياً من الجدول
+  final int totalSeats;         // إجمالي المقاعد للرحلة
 
   const BookingScreen({
     Key? key,
+    required this.tripId,
     required this.tripTime,
     required this.busNumber,
     required this.price,
+    required this.availableSeats,
+    required this.totalSeats,
   }) : super(key: key);
 
   @override
@@ -21,18 +27,18 @@ class BookingScreen extends StatefulWidget {
 class _BookingScreenState extends State<BookingScreen> {
   int bookingStep = 1;
   String bookingType = 'self';
+  int selectedSeatCount = 1; // عدد المقاعد المطلوب حجزها
 
   final TextEditingController _otherNameController = TextEditingController();
   final TextEditingController _otherPhoneController = TextEditingController();
 
-  final String myName = 'عادل (حسابك)';
+  // بيانات المستخدم الحقيقية للحساب الشخصي
+  final String myName = 'عادل'; 
   final String myPhone = '+963 999 000 111';
 
   late String selectedCategory;
   late List<Map<String, dynamic>> categoriesList;
 
-  final int totalSeats = 20;
-  final int availableSeats = 12;
   final String driverName = 'أبو أحمد الحمصي';
   final String driverPhone = '+963 933 123 456';
 
@@ -74,19 +80,19 @@ class _BookingScreenState extends State<BookingScreen> {
   Future<void> sendBookingToGoogleSheet({
     required String passengerName,
     required String passengerPhone,
-    required String finalPrice,
+    required double finalPriceNumeric,
   }) async {
     try {
       final response = await http.post(
         Uri.parse(scriptUrl),
         body: jsonEncode({
           "action": "addBooking",
-          "trip_id": widget.tripTime,
+          "trip_id": widget.tripId, // تم ربطه بالـ trip_id الفعلي الصحيح
           "phone_number": passengerPhone,
           "passenger_name": passengerName,
-          "seat_number": "1",
+          "seat_number": selectedSeatCount.toString(), // عدد المقاعد المحجوزة
           "ticket_class": selectedCategory,
-          "ticket_price": finalPrice,
+          "ticket_price": '${finalPriceNumeric.toStringAsFixed(0)} ل.س',
           "payment_status": selectedPaymentMethod,
         }),
       );
@@ -108,13 +114,23 @@ class _BookingScreenState extends State<BookingScreen> {
       orElse: () => categoriesList[0],
     );
     
-    String finalPrice = '${currentCategoryData['price'].toStringAsFixed(0)} ل.س';
+    // حساب السعر الإجمالي (سعر الفئة × عدد المقاعد المختارة)
+    double unitPrice = currentCategoryData['price'];
+    double totalPriceNumeric = unitPrice * selectedSeatCount;
+    String finalPriceDisplay = '${totalPriceNumeric.toStringAsFixed(0)} ل.س';
+
     String passengerName = (bookingType == 'self') ? myName : _otherNameController.text;
     String passengerPhone = (bookingType == 'self') ? myPhone : _otherPhoneController.text;
 
+    // التأكد من أن عدد المقاعد المتاحة لا يقل عن 1 لتفادي أخطاء القائمة المنسدلة
+    int maxAvailableSeats = widget.availableSeats > 0 ? widget.availableSeats : 1;
+    if (selectedSeatCount > maxAvailableSeats) {
+      selectedSeatCount = maxAvailableSeats;
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('تأكيد حجز: ${widget.busNumber}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
+        title: Text('${widget.tripId}: تأكيد حجز', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 18)),
         centerTitle: true,
         backgroundColor: Colors.blue[900],
         elevation: 0,
@@ -138,7 +154,7 @@ class _BookingScreenState extends State<BookingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. معلومات الرحلة الأساسية
+                // 1. معلومات الرحلة الأساسية الديناميكية
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -153,15 +169,15 @@ class _BookingScreenState extends State<BookingScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('موعد الرحلة: ${widget.tripTime}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text(widget.busNumber, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue[800])),
+                          Text('المركبة: ${widget.busNumber}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue[800])),
                         ],
                       ),
                       const Divider(height: 20),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('إجمالي المقاعد: ${reverseNumbers(totalSeats.toString())}', style: const TextStyle(fontSize: 14)),
-                          Text('المقاعد المتاحة: ${reverseNumbers(availableSeats.toString())}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green)),
+                          Text('إجمالي المقاعد: ${reverseNumbers(widget.totalSeats.toString())}', style: const TextStyle(fontSize: 14)),
+                          Text('المقاعد المتاحة: ${reverseNumbers(widget.availableSeats.toString())}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green)),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -189,7 +205,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       const Text('لمن يتم حجز هذا المقعد؟', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       RadioListTile<String>(
-                        title: const Text('الحجز لنفسي (باستخدام معلومات حسابي)'),
+                        title: Text('الحجز لنفسي ($myName - $myPhone)'),
                         value: 'self',
                         groupValue: bookingType,
                         onChanged: (value) {
@@ -238,7 +254,39 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 3. القائمة المنسدلة للفئات والأسعار
+                // 3. القائمة المنسدلة لعدد المقاعد المطلوبة
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.92),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('عدد المقاعد المطلوبة للحجز:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      const SizedBox(height: 8),
+                      DropdownButton<int>(
+                        value: selectedSeatCount,
+                        isExpanded: true,
+                        items: List.generate(maxAvailableSeats, (index) => index + 1).map((int value) {
+                          return DropdownMenuItem<int>(
+                            value: value,
+                            child: Text('$value مقعد'),
+                          );
+                        }).toList(),
+                        onChanged: (int? newValue) {
+                          setState(() {
+                            selectedSeatCount = newValue!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // 4. القائمة المنسدلة للفئات والأسعار
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
@@ -265,13 +313,13 @@ class _BookingScreenState extends State<BookingScreen> {
                         },
                       ),
                       const SizedBox(height: 5),
-                      Text('السعر المختار: $finalPrice', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue[900])),
+                      Text('إجمالي السعر ($selectedSeatCount مقعد): $finalPriceDisplay', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue[900])),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // 4. خيارات الدفع
+                // 5. خيارات الدفع
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -307,7 +355,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 5. زر تأكيد الحجز النهائي
+                // 6. زر تأكيد الحجز النهائي
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[900],
@@ -329,11 +377,11 @@ class _BookingScreenState extends State<BookingScreen> {
                       builder: (context) => const Center(child: CircularProgressIndicator()),
                     );
 
-                    // إرسال البيانات لجوجل شيت
+                    // إرسال البيانات لجوجل شيت مع الـ trip_id الحقيقي
                     await sendBookingToGoogleSheet(
                       passengerName: passengerName,
                       passengerPhone: passengerPhone,
-                      finalPrice: finalPrice,
+                      finalPriceNumeric: totalPriceNumeric,
                     );
 
                     // إغلاق مؤشر التحميل
@@ -358,19 +406,19 @@ class _BookingScreenState extends State<BookingScreen> {
                             const SizedBox(height: 6),
                             Text('📱 رقم الهاتف: ${reverseNumbers(passengerPhone)}'),
                             const SizedBox(height: 6),
-                            Text('🚌 الباص: ${widget.busNumber}'),
+                            Text('🚌 الرحلة والـ ID: ${widget.tripId} (${widget.busNumber})'),
                             const SizedBox(height: 6),
                             Text('⏰ الموعد: ${widget.tripTime}'),
                             const SizedBox(height: 6),
-                            Text('🎫 الفئة: $selectedCategory'),
+                            Text('🎫 الفئة: $selectedCategory (عدد المقاعد: $selectedSeatCount)'),
                             const SizedBox(height: 6),
-                            Text('💰 السعر: $finalPrice'),
+                            Text('💰 الإجمالي: $finalPriceDisplay'),
                             const SizedBox(height: 6),
                             Text('💳 الدفع: $selectedPaymentMethod'),
                             const SizedBox(height: 6),
                             Text('👨‍✈️ السائق: $driverName (${reverseNumbers(driverPhone)})'),
                             const Divider(height: 20),
-                            const Text('تم تسجيل الحجز بنجاح في النظام. رافقتكم السلامة!', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                            const Text('تم تسجيل الحجز بنجاح في النظام وخصم المقاعد. رافقتكم السلامة!', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           ],
                         ),
                         actions: [
