@@ -231,6 +231,7 @@ class _TripScreenState extends State<TripScreen> {
                         String departureTime = trip['departure_time']?.toString() ?? 'غير محدد';
                         String vehicleId = trip['vehicle_id']?.toString() ?? trip['bus_number']?.toString() ?? 'باص';
                         int availableSeats = int.tryParse(trip['available_seats']?.toString() ?? '0') ?? 0;
+                        int totalSeats = int.tryParse(trip['total_seats']?.toString() ?? '14') ?? 14; // تم جلب المقاعد الكلية أو جعلها 14 كافتراضي
                         String price = trip['standard_price']?.toString() ?? '0';
                         bool isFull = availableSeats <= 0;
 
@@ -323,7 +324,8 @@ class _TripScreenState extends State<TripScreen> {
                                                 tripTime: departureTime,
                                                 busNumber: vehicleId,
                                                 price: price,
-                                                availableSeats: availableSeats, // تم تضمين هذا المتغير المطلوب نهائياً
+                                                availableSeats: availableSeats,
+                                                totalSeats: totalSeats, // تم إضافة المتغير المطلوب هنا بنجاح
                                               ),
                                             ),
                                           );
