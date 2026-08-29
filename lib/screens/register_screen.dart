@@ -31,14 +31,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // إرسال البيانات الحقيقية إلى جدول Customer عبر الـ ApiService
-      bool success = await ApiService.registerCustomer(
+      // إرسال البيانات الحقيقية إلى جدول Customer عبر الـ ApiService الجديد
+      Map<String, dynamic> response = await ApiService.registerCustomer(
         passengerName: name,
         phoneNumber: phone,
+        password: password,
         preferredClass: _preferredClass,
       );
 
-      if (success) {
+      String status = response['status'] ?? '';
+      String message = response['message'] ?? 'حدث خطأ ما';
+
+      if (status == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم إنشاء الحساب وتسجيل الدخول بنجاح!')),
         );
@@ -51,9 +55,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           (route) => false,
         );
+      } else if (status == 'exists') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('رقم الهاتف مسجل مسبقاً'), backgroundColor: Colors.red),
+        );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('رقم الهاتف مسجل مسبقاً أو حدث خطأ في الخادم')),
+          SnackBar(content: Text(message), backgroundColor: Colors.orange),
         );
       }
     } catch (e) {

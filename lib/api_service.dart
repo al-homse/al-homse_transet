@@ -15,11 +15,9 @@ class ApiService {
         Uri.parse('$webAppUrl?action=getTrips'),
       );
 
-      // جوجل Apps Script يعيد كود 200 أو 302 عند النجاح
       if (response.statusCode == 200 || response.statusCode == 302) {
         final decoded = jsonDecode(response.body);
 
-        // التأكد من أن النتيجة المرتجعة قائمة List
         if (decoded is List) {
           return decoded;
         } else if (decoded is Map && decoded.containsKey('trips')) {
@@ -31,7 +29,6 @@ class ApiService {
       }
     } catch (e) {
       print('خطأ في جلب البيانات: $e');
-      // إعادة طرح الخطأ ليلتقطه FutureBuilder ويظهره للمستخدم
       rethrow; 
     }
   }
@@ -48,7 +45,6 @@ class ApiService {
     required String ticketPrice,
   }) async {
     try {
-      // إرسال البيانات باسم text/plain لتجاوز قيود CORS في الـ Web
       final response = await http.post(
         Uri.parse(webAppUrl),
         headers: {'Content-Type': 'text/plain;charset=UTF-8'},
@@ -75,41 +71,42 @@ class ApiService {
   }
 
   // =================================================================
-  // 3. دالة تسجيل دخول الزبون (التحقق + تحديث الحالة والعداد)
+  // 3. دالة تسجيل دخول الزبون (بالاسم الثلاثي، رقم الهاتف، وكلمة المرور)
   // =================================================================
-  static Future<bool> loginCustomer({
-    required String identifier, // رقم الهاتف أو الاسم
-    required String password,   // كلمة المرور (رقم الهاتف)
+  static Future<Map<String, dynamic>> loginCustomer({
+    required String passengerName,
+    required String phoneNumber,
+    required String password,
   }) async {
     try {
       final response = await http.post(
         Uri.parse(webAppUrl),
         headers: {'Content-Type': 'text/plain;charset=UTF-8'},
         body: jsonEncode({
-          'action': 'loginCustomer',
-          'identifier': identifier,
+          'action': 'login', // يتطابق مع الـ action في سكربت جوجل الجديد
+          'passenger_name': passengerName,
+          'phone_number': phoneNumber,
           'password': password,
         }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 302) {
-        final data = jsonDecode(response.body);
-        // التحقق من حالة الرد القادم من سكربت جوجل
-        return data['status'] == 'success' || data['result'] == 'success';
+        return jsonDecode(response.body); // يعيد الخريطة كاملة (status, message, etc)
       }
-      return false;
+      return {"status": "error", "message": "خطأ في الاتصال بالخادم (${response.statusCode})"};
     } catch (e) {
       print('خطأ في تسجيل الدخول: $e');
-      return false;
+      return {"status": "error", "message": e.toString()};
     }
   }
 
   // =================================================================
   // 4. دالة إنشاء حساب جديد وإضافته لجدول Customer
   // =================================================================
-  static Future<bool> registerCustomer({
+  static Future<Map<String, dynamic>> registerCustomer({
     required String passengerName,
     required String phoneNumber,
+    required String password,
     required String preferredClass,
   }) async {
     try {
@@ -117,21 +114,21 @@ class ApiService {
         Uri.parse(webAppUrl),
         headers: {'Content-Type': 'text/plain;charset=UTF-8'},
         body: jsonEncode({
-          'action': 'registerCustomer',
+          'action': 'register', // يتطابق مع الـ action في سكربت جوجل الجديد
           'passenger_name': passengerName,
           'phone_number': phoneNumber,
+          'password': password,
           'preferred_class': preferredClass,
         }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 302) {
-        final data = jsonDecode(response.body);
-        return data['status'] == 'success' || data['result'] == 'success';
+        return jsonDecode(response.body); // يعيد النتيجة مع حالة الوجود (exists) أو النجاح (success)
       }
-      return false;
+      return {"status": "error", "message": "خطأ في الاتصال بالخادم (${response.statusCode})"};
     } catch (e) {
       print('خطأ في إنشاء الحساب: $e');
-      return false;
+      return {"status": "error", "message": e.toString()};
     }
   }
 }
