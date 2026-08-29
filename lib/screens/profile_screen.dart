@@ -12,10 +12,10 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _userName = 'زائر';
   String _userPhone = 'غير مسجل';
-  String _customerId = 'AHR-XXX';
+  String _customerId = '---';
   String _totalTrips = '0';
   String _preferredClass = 'VIP';
-  String _accountStatus = 'نشط ومفعل';
+  String _accountStatus = 'غير مسجل الدخول';
   bool _isLoading = true;
 
   @override
@@ -27,12 +27,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _userName = prefs.getString('userName') ?? 'عادل حسام ريشه';
-      _userPhone = prefs.getString('userPhone') ?? '938117361';
-      _customerId = prefs.getString('customer_id') ?? 'AHR-093';
-      _totalTrips = prefs.getString('total_trips') ?? '0';
+      // جلب البيانات المخزنة الحقيقية مع وضع فراغات صحيحة إذا لم تتوفر
+      _userName = prefs.getString('passenger_name') ?? prefs.getString('userName') ?? 'زائر';
+      _userPhone = prefs.getString('phone_number') ?? prefs.getString('userPhone') ?? 'غير مسجل';
+      _customerId = prefs.getString('customer_id') ?? '---';
+      _totalTrips = prefs.getInt('total_trips')?.toString() ?? prefs.getString('total_trips') ?? '0';
       _preferredClass = prefs.getString('preferred_class') ?? 'VIP';
-      _accountStatus = prefs.getString('customer_status') == 'LoggedIn' ? 'نشط ومفعل' : 'مسجل خروج';
+      
+      String status = prefs.getString('customer_status') ?? '';
+      _accountStatus = (status == 'LoggedIn') ? 'نشط ومفعل' : 'مسجل خروج';
+      
       _isLoading = false;
     });
   }
@@ -230,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // دالة مساعدة لإنشاء بطاقات الإحصائيات (الرحلات والأيدي)
+  // دالة مساعدة لإنشاء بطاقات الإحصائيات
   Widget _buildStatCard({required String title, required String value, required IconData icon, required Color color}) {
     return Container(
       padding: const EdgeInsets.all(16),
