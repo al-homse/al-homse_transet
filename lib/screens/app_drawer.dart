@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // مكتبة التخزين المحلي لمسح بيانات الجلسة عند الخروج
 import 'my_trips_screen.dart';
 import 'my_bookings_screen.dart';
 import 'profile_screen.dart';
@@ -103,14 +104,21 @@ class AppDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.exit_to_app, color: Colors.red),
             title: const Text('تسجيل الخروج', style: TextStyle(color: Colors.red)),
-            onTap: () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LoginScreen(),
-                ),
-                (route) => false,
-              );
+            onTap: () async {
+              // مسح بيانات الجلسة المخزنة محلياً عند تسجيل الخروج
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.clear();
+
+              // العودة إلى شاشة الترحيب وحذف الصفحات السابقة من الذاكرة
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WelcomeScreen(),
+                  ),
+                  (route) => false,
+                );
+              }
             },
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // مكتبة التخزين المحلي
 import 'register_screen.dart';
 import 'admin_dashboard.dart';
 import '../api_service.dart';
@@ -18,6 +19,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // دالة حفظ بيانات الجلسة محلياً
+  Future<void> _saveUserSession(String name, String phone) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('userName', name);
+    await prefs.setString('userPhone', phone);
+  }
+
   void _handleLogin() async {
     String inputName = _nameController.text.trim();
     String inputPhone = _phoneController.text.trim();
@@ -34,6 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       if (inputName == 'admin' && inputPhone == 'admin' && inputPass == 'admin') {
+        // حفظ جلسة الأدمن أيضاً إن أردت أو تخطيها
+        await _saveUserSession(inputName, inputPhone);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const AdminDashboard()),
@@ -51,6 +62,9 @@ class _LoginScreenState extends State<LoginScreen> {
       String message = response['message'] ?? 'حدث خطأ ما';
 
       if (status == 'success') {
+        // << هنا يتم حفظ البيانات محلياً عند نجاح الدخول >>
+        await _saveUserSession(inputName, inputPhone);
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
@@ -119,7 +133,6 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // إزالة الconst لأن قيم الحقول تتغير ديناميكياً
       drawer: AppDrawer(
         userName: _nameController.text.isEmpty ? 'زائر' : _nameController.text,
         userPhone: _phoneController.text.isEmpty ? '+963 ...' : _phoneController.text,
