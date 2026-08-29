@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
-import 'trip.dart';
-import 'my_trips_screen.dart'; // شاشة رحلاتي
-import 'booking_screen.dart';  // شاشة الحجز (تم تعديل الاسم بدون s زراِئدة)
-import 'profile_screen.dart'; // شاشة حسابي
-import 'main_screen.dart';    // الشاشة الرئيسية
+import 'my_trips_screen.dart';
+import 'my_bookings_screen.dart';
+import 'profile_screen.dart';
+import 'login_screen.dart';
+import 'trip.dart'; // الشاشة الرئيسة للرحلات
 
 class AppDrawer extends StatelessWidget {
   final String userName;
   final String userPhone;
 
-  // إزالة كلمة const من الكونستركتور لأنه يستقبل متغيرات غير ثابتة
-  const AppDrawer({super.key, required this.userName, required this.userPhone});
+  const AppDrawer({
+    Key? key,
+    required this.userName,
+    required this.userPhone,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,65 +23,78 @@ class AppDrawer extends StatelessWidget {
         children: [
           UserAccountsDrawerHeader(
             accountName: Text(
-              userName.isEmpty ? 'زائر' : userName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              userName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            // استخدام accountEmail بدلاً من accountNumber الوهمية لعرض رقم الهاتف أو تفاصيل إضافية
-            accountEmail: Text(userPhone),
-            decoration: const BoxDecoration(color: Colors.blue),
+            accountDescription: Text(
+              userPhone,
+              style: const TextStyle(color: Colors.white70),
+            ),
             currentAccountPicture: const CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Colors.blue),
+              child: Icon(Icons.person, size: 40, color: Colors.blue),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.blue[900],
             ),
           ),
           
+          // 1. رحلاتي
           ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('الرئيسية'),
+            leading: const Icon(Icons.directions_bus, color: Colors.blue),
+            title: const Text('رحلاتي'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => const MainScreen(isLoggedIn: true)),
+                MaterialPageRoute(
+                  builder: (context) => MyTripsScreen(userPhone: userPhone),
+                ),
               );
             },
           ),
+
+          // 2. حجوزاتي
           ListTile(
-            leading: const Icon(Icons.bookmark_add),
-            title: const Text('حجز مقعد'),
+            leading: const Icon(Icons.bookmark, color: Colors.blue),
+            title: const Text('حجوزاتي'),
             onTap: () {
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => BookingScreen(userName: userName, userPhone: userPhone)),
+                MaterialPageRoute(
+                  builder: (context) => MyBookingsScreen(userPhone: userPhone, userName: userName),
+                ),
               );
             },
           ),
+
+          // 3. حسابي / الملف الشخصي
           ListTile(
-            leading: const Icon(Icons.list_alt),
-            title: const Text('رحلاتي الحجوزات'),
+            leading: const Icon(Icons.person, color: Colors.blue),
+            title: const Text('حسابي وملفي الشخصي'),
             onTap: () {
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => MyTripsScreen(userPhone: userPhone)),
+                MaterialPageRoute(
+                  builder: (context) => ProfileScreen(userName: userName, userPhone: userPhone),
+                ),
               );
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('حسابي'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ProfileScreen(userName: userName, userPhone: userPhone)),
-              );
-            },
-          ),
+
           const Divider(),
+
+          // 4. تسجيل الخروج
           ListTile(
-            leading: const Icon(Icons.exit_toapp, color: Colors.red),
+            leading: const Icon(Icons.exit_to_app, color: Colors.red),
             title: const Text('تسجيل الخروج', style: TextStyle(color: Colors.red)),
             onTap: () {
-              // العودة لصفحة البداية أو تسجيل الدخول
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LoginScreen(),
+                ),
+                (route) => false,
+              );
             },
           ),
         ],
