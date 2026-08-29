@@ -131,4 +131,30 @@ class ApiService {
       return {"status": "error", "message": e.toString()};
     }
   }
+
+  // =================================================================
+  // 5. دالة تسجيل الخروج لتحديث حالة المستخدم إلى Offline و LoggedOut في الشيت
+  // =================================================================
+  static Future<Map<String, dynamic>> logoutCustomer({
+    required String phoneNumber,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(webAppUrl),
+        headers: {'Content-Type': 'text/plain;charset=UTF-8'},
+        body: jsonEncode({
+          'action': 'logout', // الإجراء الخاص بتسجيل الخروج في السكربت
+          'phone_number': phoneNumber,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 302) {
+        return jsonDecode(response.body);
+      }
+      return {"status": "error", "message": "خطأ في الاتصال بالخادم (${response.statusCode})"};
+    } catch (e) {
+      print('خطأ في تسجيل الخروج: $e');
+      return {"status": "error", "message": e.toString()};
+    }
+  }
 }

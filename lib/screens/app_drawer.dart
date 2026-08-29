@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../api_service.dart'; // تم استيراد خدمة الـ API للوصول لدالة الخروج
 import 'my_trips_screen.dart';
 import 'my_bookings_screen.dart';
 import 'profile_screen.dart';
@@ -135,10 +136,30 @@ class _AppDrawerState extends State<AppDrawer> {
             leading: const Icon(Icons.exit_to_app, color: Colors.red),
             title: const Text('تسجيل الخروج', style: TextStyle(color: Colors.red)),
             onTap: () async {
+              // إظهار مؤشر تحميل أثناء إرسال طلب الخروج للخادم
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const Center(child: CircularProgressIndicator()),
+              );
+
               final prefs = await SharedPreferences.getInstance();
+              String? phone = prefs.getString('userPhone');
+
+              // إرسال طلب للخادم لتحديث الحالة في Google Sheets إلى LoggedOut و Offline
+              if (phone != null && phone != 'غير مسجل') {
+                try {
+                  await ApiService.logoutCustomer(phoneNumber: phone);
+                } catch (e) {
+                  print('خطأ أثناء إرسال طلب تسجيل الخروج للخادم: $e');
+                }
+              }
+
+              // مسح بيانات الجلسة من الذاكرة المحلية
               await prefs.clear();
 
               if (context.mounted) {
+                Navigator.pop(context); // إغلاق مؤشر التحميل
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const WelcomeScreen()),
