@@ -20,7 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void initState() {
-    super.initState(); مفتاح
+    super.initState();
     _loadProfileData();
   }
 
