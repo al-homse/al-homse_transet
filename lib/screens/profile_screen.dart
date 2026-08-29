@@ -15,7 +15,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _customerId = '---';
   String _totalTrips = '0';
   String _preferredClass = 'VIP';
-  String _accountStatus = 'نشط ومفعل'; // افتراضياً طالما أن الشاشة مفتوحة
+  String _accountStatus = 'نشط ومفعل';
   bool _isLoading = true;
 
   @override
@@ -26,28 +26,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfileData() async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // طباعة القيم في الـ Console للتأكد من الأسماء المخزنة (مفيدة للتصحيح)
-    print("--- DEBUG PROFILE ---");
-    print("Name: ${prefs.getString('passenger_name')} | ${prefs.getString('userName')}");
-    print("Phone: ${prefs.getString('phone_number')} | ${prefs.getString('userPhone')}");
-    print("ID: ${prefs.getString('customer_id')}");
-    print("Status: ${prefs.getString('customer_status')}");
 
     setState(() {
-      // 1. جلب الاسم ورقم الهاتف
-      _userName = prefs.getString('passenger_name') ?? prefs.getString('userName') ?? 'عادل حسام ريشه';
-      _userPhone = prefs.getString('phone_number') ?? prefs.getString('userPhone') ?? '938117361';
+      // 1. جلب الاسم ورقم الهاتف من المفاتيح الصحيحة
+      _userName = prefs.getString('passenger_name') ?? prefs.getString('userName') ?? 'زائر';
+      _userPhone = prefs.getString('phone_number') ?? prefs.getString('userPhone') ?? 'غير مسجل';
       
-      // 2. جلب الأيدي الخاص بالعميل من جدول الـ Customers في جوجل شيت
-      _customerId = prefs.getString('customer_id') ?? prefs.getString('id') ?? '938117361';
+      // 2. جلب معرف الحساب (ID) حصرياً من عمود customer_id الخاص بجدول العملاء
+      _customerId = prefs.getString('customer_id') ?? '---';
       
-      // 3. جلب عدد الرحلات والفئة
+      // 3. جلب عدد الرحلات والفئة المفضلة
       _totalTrips = prefs.getString('total_trips') ?? prefs.getInt('total_trips')?.toString() ?? '0';
       _preferredClass = prefs.getString('preferred_class') ?? 'VIP';
       
-      // 4. حالة الحساب: طالما الصفحة مفتوحة والمستخدم داخل التطبيق، نتحقق من الحالة
-      // إذا كانت مسجلة LoggedOut صراحة، نظهرها، وإلا فالحساب نشط ومفعل طالما أنه متصل
+      // 4. حالة الحساب
       String status = prefs.getString('customer_status') ?? 'LoggedIn';
       if (status == 'LoggedOut' || status == 'false' || status == '0') {
         _accountStatus = 'مسجل خروج';
@@ -154,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // 2. بطاقات الإحصائيات (عدد الرحلات والأيدي المستورد من جدول العملاء)
+            // 2. بطاقات الإحصائيات (عدد الرحلات ومعرف المستخدم customer_id)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -171,7 +163,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: _buildStatCard(
                       title: 'معرف المستخدم (ID)',
-                      value: _customerId,
+                      value: _customerId, // سيطبع AHR-093 القادم من جدول Customer
                       icon: Icons.badge_outlined,
                       color: Colors.purple,
                     ),
@@ -182,7 +174,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // 3. قائمة التفاصيل الإضافية (الفئة والحالة الصحيحة)
+            // 3. قائمة التفاصيل الإضافية (الفئة والحالة)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
