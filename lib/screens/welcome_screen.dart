@@ -13,36 +13,51 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  bool _isLoggedIn = false;
+  String _userName = 'زائر';
+  String _userPhone = 'غير مسجل';
+  bool _isLoading = true; // لمعرفة حالة التحقق أول ما تفتح الصفحة
+
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus(); // فحص حالة تسجيل الدخول تلقائياً عند فتح التطبيق
+    _checkLoginStatus();
   }
 
   // دالة فحص الذاكرة المحلية
   Future<void> _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    bool loggedIn = prefs.getBool('isLoggedIn') ?? false;
 
-    if (isLoggedIn) {
-      // إذا كان مسجلاً مسبقاً، انتقل مباشرة إلى شاشة الرحلات
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const TripScreen(),
-          ),
-        );
-      }
+    if (loggedIn) {
+      // إذا كان مسجلاً، نجلب بياناته لنعرضها بالقائمة أو نحدث الحالة
+      setState(() {
+        _isLoggedIn = true;
+        _userName = prefs.getString('userName') ?? 'مستخدم';
+        _userPhone = prefs.getString('userPhone') ?? '';
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _isLoggedIn = false;
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // أثناء فحص البيانات لعرض واجهة نظيفة بدون وميض
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      drawer: const AppDrawer(
-        userName: 'زائر',
-        userPhone: 'غير مسجل',
+      drawer: AppDrawer(
+        userName: _userName,
+        userPhone: _userPhone,
       ),
       body: Stack(
         children: [
@@ -91,14 +106,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'خدمات الحجز والنقل ',
-                    style: TextStyle(
+                  Text(
+                    _isLoggedIn ? 'أهلاً بك مجدداً، $_userName' : 'خدمات الحجز والنقل',
+                    style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                   const Spacer(),
+                  
+                  // زر استعراض الرحلات (يظهر دائماً)
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 55),
@@ -111,48 +129,54 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const TripScreen(),
+                          builder: (context) => const TripScreen(isLoggedIn: true),
                         ),
                       );
                     },
-                    child: const Text(
-                      'استعراض الرحلات والحجز',
-                      style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    child: Text(
+                      _isLoggedIn ? 'الدخول إلى الرحلات والحجوزات' : 'استعراض الرحلات والحجز',
+                      style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
+                  
                   const SizedBox(height: 15),
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 55),
-                      side: const BorderSide(color: Colors.white, width: 2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+
+                  // إذا كان مسجلاً دخوله، سنخفي أزرار تسجيل الدخول وإنشاء حساب تماماً!
+                  if (!_isLoggedIn) ...[
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 55),
+                        side: const BorderSide(color: Colors.white, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'تسجيل الدخول',
+                        style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'تسجيل الدخول',
-                      style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                    const SizedBox(height: 15),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                        );
+                      },
+                      child: const Text(
+                        'ليس لديك حساب؟ انشئ حساباً جديداً',
+                        style: TextStyle(fontSize: 15, color: Colors.white70),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                      );
-                    },
-                    child: const Text(
-                      'ليس لديك حساب؟ انشئ حساباً جديداً',
-                      style: TextStyle(fontSize: 15, color: Colors.white70),
-                    ),
-                  ),
+                  ],
+
                   const SizedBox(height: 20),
                 ],
               ),
