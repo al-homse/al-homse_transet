@@ -7,33 +7,56 @@ import 'login_screen.dart';
 import 'welcome_screen.dart';
 
 class AppDrawer extends StatefulWidget {
-  const AppDrawer({Key? key}) : super(key: key);
+  final String? userName;
+  final String? userPhone;
+
+  const AppDrawer({
+    Key? key,
+    this.userName,
+    this.userPhone,
+  }) : super(key: key);
 
   @override
   State<AppDrawer> createState() => _AppDrawerState();
 }
 
 class _AppDrawerState extends State<AppDrawer> {
-  String _userName = 'زائر';
-  String _userPhone = 'غير مسجل';
+  late String _userName;
+  late String _userPhone;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _initUserData();
   }
 
-  // جلب البيانات المخزنة محلياً عند فتح القائمة
-  Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = prefs.getString('userName') ?? 'زائر';
-      _userPhone = prefs.getString('userPhone') ?? 'غير مسجل';
-    });
+  Future<void> _initUserData() async {
+    // إذا تم تمرير البيانات مباشرة نستخدمها، وإذا لم تُمرر نقرأها من الذاكرة المحلية
+    if (widget.userName != null && widget.userPhone != null) {
+      setState(() {
+        _userName = widget.userName!;
+        _userPhone = widget.userPhone!;
+        _isLoading = false;
+      });
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _userName = prefs.getString('userName') ?? 'زائر';
+        _userPhone = prefs.getString('userPhone') ?? 'غير مسجل';
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Drawer(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -113,7 +136,7 @@ class _AppDrawerState extends State<AppDrawer> {
             title: const Text('تسجيل الخروج', style: TextStyle(color: Colors.red)),
             onTap: () async {
               final prefs = await SharedPreferences.getInstance();
-              await prefs.clear(); // مسح الذاكرة بالكامل
+              await prefs.clear();
 
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
