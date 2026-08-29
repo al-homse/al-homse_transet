@@ -43,10 +43,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SnackBar(content: Text('تم إنشاء الحساب وتسجيل الدخول بنجاح!')),
         );
         
-        // الانتقال لشاشة الرحلات وحذف شاشات الدخول والتسجيل من التراكم
+        // الانتقال لشاشة الرحلات مع تمرير حالة تسجيل الدخول وحذف شاشات الدخول والتسجيل من التراكم
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const TripScreen()),
+          MaterialPageRoute(
+            builder: (context) => const TripScreen(isLoggedIn: true),
+          ),
           (route) => false,
         );
       } else {

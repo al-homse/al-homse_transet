@@ -46,13 +46,15 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (loginSuccess) {
-        // حالة ناجحة حقيقية
+        // حالة ناجحة حقيقية وتم تمرير حالة تسجيل الدخول بنجاح
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم تسجيل دخولك بنجاح!')),
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const TripScreen()),
+          MaterialPageRoute(
+            builder: (context) => const TripScreen(isLoggedIn: true),
+          ),
         );
       } else {
         // حالة خاطئة / غير مسجل (تتم محاكاة الـ False وإظهار تنبيه التسجيل)

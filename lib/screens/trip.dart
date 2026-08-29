@@ -5,15 +5,15 @@ import '../api_service.dart';
 
 class TripScreen extends StatefulWidget {
   final String? routeName; 
+  final bool isLoggedIn; // متغير لحفظ حالة تسجيل الدخول القادمة من الخارج
 
-  const TripScreen({Key? key, this.routeName}) : super(key: key);
+  const TripScreen({Key? key, this.routeName, this.isLoggedIn = false}) : super(key: key);
 
   @override
   State<TripScreen> createState() => _TripScreenState();
 }
 
 class _TripScreenState extends State<TripScreen> {
-  bool isLoggedIn = true; 
   late Future<List<dynamic>> _tripsFuture;
 
   @override
@@ -31,6 +31,9 @@ class _TripScreenState extends State<TripScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // الاعتماد على الحالة الحقيقية المُستقبلة بدلاً من القيمة الثابتة
+    bool isLoggedIn = widget.isLoggedIn;
+
     return FutureBuilder<List<dynamic>>(
       future: _tripsFuture,
       builder: (context, snapshot) {
@@ -163,7 +166,10 @@ class _TripScreenState extends State<TripScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => TripScreen(routeName: route),
+                                      builder: (context) => TripScreen(
+                                        routeName: route,
+                                        isLoggedIn: isLoggedIn, // تمرير الحالة للأمام
+                                      ),
                                     ),
                                   );
                                 },
@@ -231,7 +237,7 @@ class _TripScreenState extends State<TripScreen> {
                         String departureTime = trip['departure_time']?.toString() ?? 'غير محدد';
                         String vehicleId = trip['vehicle_id']?.toString() ?? trip['bus_number']?.toString() ?? 'باص';
                         int availableSeats = int.tryParse(trip['available_seats']?.toString() ?? '0') ?? 0;
-                        int totalSeats = int.tryParse(trip['total_seats']?.toString() ?? '14') ?? 14; // تم جلب المقاعد الكلية أو جعلها 14 كافتراضي
+                        int totalSeats = int.tryParse(trip['total_seats']?.toString() ?? '14') ?? 14; 
                         String price = trip['standard_price']?.toString() ?? '0';
                         bool isFull = availableSeats <= 0;
 
@@ -290,6 +296,7 @@ class _TripScreenState extends State<TripScreen> {
                                 onPressed: isFull
                                     ? null
                                     : () {
+                                        // التحقق الحقيقي من حالة الدخول
                                         if (!isLoggedIn) {
                                           showDialog(
                                             context: context,
@@ -316,6 +323,7 @@ class _TripScreenState extends State<TripScreen> {
                                             ),
                                           );
                                         } else {
+                                          // الانتقال لشاشة الحجز لأن المستخدم مسجل دخول بالفعل
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
@@ -325,7 +333,7 @@ class _TripScreenState extends State<TripScreen> {
                                                 busNumber: vehicleId,
                                                 price: price,
                                                 availableSeats: availableSeats,
-                                                totalSeats: totalSeats, // تم إضافة المتغير المطلوب هنا بنجاح
+                                                totalSeats: totalSeats,
                                               ),
                                             ),
                                           );
