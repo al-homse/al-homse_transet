@@ -3,6 +3,7 @@ import 'my_trips_screen.dart';
 import 'my_bookings_screen.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
+import 'welcome_screen.dart'; // استيراد شاشة الترحيب
 import 'trip.dart'; // الشاشة الرئيسة للرحلات
 
 class AppDrawer extends StatelessWidget {
@@ -39,6 +40,21 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
           
+          // 0. الصفحة الرئيسية (الرجوع لشاشة الترحيب)
+          ListTile(
+            leading: const Icon(Icons.home, color: Colors.blue),
+            title: const Text('الصفحة الرئيسية'),
+            onTap: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const WelcomeScreen(),
+                ),
+                (route) => false,
+              );
+            },
+          ),
+
           // 1. رحلاتي
           ListTile(
             leading: const Icon(Icons.directions_bus, color: Colors.blue),
