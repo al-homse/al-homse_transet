@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';   
 import 'booking_screen.dart'; 
-import '../api_service.dart';    
+import '../api_service.dart';
+import 'app_drawer.dart'; // استيراد القائمة الجانبية
 
 class TripScreen extends StatefulWidget {
   final String? routeName; 
@@ -43,7 +44,9 @@ class _TripScreenState extends State<TripScreen> {
             appBar: AppBar(
               title: const Text('جاري التحميل...', style: TextStyle(color: Colors.white, fontSize: 18)),
               backgroundColor: Colors.blue[900],
+              iconTheme: const IconThemeData(color: Colors.white),
             ),
+            drawer: const AppDrawer(),
             body: const Center(child: CircularProgressIndicator(color: Colors.white)),
           );
         }
@@ -54,7 +57,9 @@ class _TripScreenState extends State<TripScreen> {
             appBar: AppBar(
               title: const Text('خطأ في الاتصال', style: TextStyle(color: Colors.white, fontSize: 18)),
               backgroundColor: Colors.blue[900],
+              iconTheme: const IconThemeData(color: Colors.white),
             ),
+            drawer: const AppDrawer(),
             body: Center(child: Text('حدث خطأ: ${snapshot.error}', style: const TextStyle(color: Colors.white))),
           );
         }
@@ -89,6 +94,8 @@ class _TripScreenState extends State<TripScreen> {
                 ),
               ],
             ),
+            // إضافة القائمة الجانبية هنا
+            drawer: const AppDrawer(),
             body: Stack(
               children: [
                 SizedBox.expand(
@@ -207,6 +214,8 @@ class _TripScreenState extends State<TripScreen> {
               ),
             ],
           ),
+          // إضافة القائمة الجانبية هنا أيضاً لشاشة المواعيد
+          drawer: const AppDrawer(),
           body: Stack(
             children: [
               SizedBox.expand(

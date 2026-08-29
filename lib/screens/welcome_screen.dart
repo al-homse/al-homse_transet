@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'trip.dart';      // استيراد شاشة مواعيد الرحلات الحقيقية
 import 'login_screen.dart';     // استيراد شاشة تسجيل الدخول الحقيقية
 import 'register_screen.dart';  // استيراد شاشة إنشاء الحساب الحقيقية
+import 'app_drawer.dart';       // استيراد القائمة الجانبية
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({Key? key}) : super(key: key);
@@ -9,6 +10,11 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // ربط القائمة الجانبية بالشاشة مع بيانات الزائر/المستخدم الافتراضية
+      drawer: const AppDrawer(
+        userName: 'زائر',
+        userPhone: 'غير مسجل',
+      ),
       body: Stack(
         children: [
           // 1. طبقة الصورة الخلفية (تغطي الشاشة بالكامل)
@@ -24,7 +30,25 @@ class WelcomeScreen extends StatelessWidget {
             color: Colors.black.withOpacity(0.5), // درجة التعتيم
           ),
 
-          // 3. المحتويات والنصوص والأزرار في المقدمة
+          // 3. زر سحب أو إظهار القائمة الجانبية في أعلى الشاشة (اختياري لسهولة الاستخدام)
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Builder(
+                  builder: (context) => IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white, size: 28),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // 4. المحتويات والنصوص والأزرار في المقدمة
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),

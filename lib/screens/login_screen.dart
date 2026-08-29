@@ -3,6 +3,7 @@ import 'register_screen.dart';
 import 'admin_dashboard.dart';
 import '../api_service.dart';
 import 'trip.dart';
+import 'app_drawer.dart'; // استيراد القائمة الجانبية
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -117,6 +118,19 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // إضافة شريط العلوي AppBar لفتح القائمة الجانبية بسهولة
+      appBar: AppBar(
+        title: const Text('تسجيل الدخول', style: TextStyle(color: Colors.white, fontSize: 18)),
+        centerTitle: true,
+        backgroundColor: Colors.blue[900],
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      // ربط القائمة الجانبية هنا أيضاً لتوحيد واجهات التطبيق
+      drawer: AppDrawer(
+        userName: _nameController.text.isEmpty ? 'زائر' : _nameController.text,
+        userPhone: _phoneController.text.isEmpty ? '+963 ...' : _phoneController.text,
+      ),
       body: Stack(
         children: [
           SizedBox.expand(
@@ -160,6 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.person),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
+                      onChanged: (_) => setState(() {}), // لتحديث بيانات القائمة الجانبية فورياً
                     ),
                     const SizedBox(height: 15),
                     // حقل رقم الهاتف
@@ -171,6 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.phone),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
+                      onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 15),
                     // حقل كلمة المرور

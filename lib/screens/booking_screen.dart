@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'app_drawer.dart'; // استيراد القائمة الجانبية
 
 class BookingScreen extends StatefulWidget {
   final String tripId;          // معرف الرحلة الفعلي (مثل TRP-001)
@@ -133,6 +134,11 @@ class _BookingScreenState extends State<BookingScreen> {
         backgroundColor: Colors.blue[900],
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      // ربط القائمة الجانبية هنا ببيانات المستخدم الحالية
+      drawer: AppDrawer(
+        userName: widget.currentUserName,
+        userPhone: widget.currentUserPhone,
       ),
       body: Stack(
         children: [
