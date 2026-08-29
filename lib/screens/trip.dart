@@ -46,7 +46,7 @@ class _TripScreenState extends State<TripScreen> {
               backgroundColor: Colors.blue[900],
               iconTheme: const IconThemeData(color: Colors.white),
             ),
-            drawer: const AppDrawer(),
+            drawer: const AppDrawer(userName: 'زائر', userPhone: 'غير مسجل'),
             body: const Center(child: CircularProgressIndicator(color: Colors.white)),
           );
         }
@@ -59,7 +59,7 @@ class _TripScreenState extends State<TripScreen> {
               backgroundColor: Colors.blue[900],
               iconTheme: const IconThemeData(color: Colors.white),
             ),
-            drawer: const AppDrawer(),
+            drawer: const AppDrawer(userName: 'زائر', userPhone: 'غير مسجل'),
             body: Center(child: Text('حدث خطأ: ${snapshot.error}', style: const TextStyle(color: Colors.white))),
           );
         }
@@ -94,8 +94,8 @@ class _TripScreenState extends State<TripScreen> {
                 ),
               ],
             ),
-            // إضافة القائمة الجانبية هنا
-            drawer: const AppDrawer(),
+            // إضافة القائمة الجانبية مع تمرير البيانات الافتراضية
+            drawer: const AppDrawer(userName: 'زائر', userPhone: 'غير مسجل'),
             body: Stack(
               children: [
                 SizedBox.expand(
@@ -175,7 +175,7 @@ class _TripScreenState extends State<TripScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => TripScreen(
                                         routeName: route,
-                                        isLoggedIn: isLoggedIn, // تمرير الحالة للأمام
+                                        isLoggedIn: isLoggedIn,
                                       ),
                                     ),
                                   );
@@ -214,8 +214,7 @@ class _TripScreenState extends State<TripScreen> {
               ),
             ],
           ),
-          // إضافة القائمة الجانبية هنا أيضاً لشاشة المواعيد
-          drawer: const AppDrawer(),
+          drawer: const AppDrawer(userName: 'زائر', userPhone: 'غير مسجل'),
           body: Stack(
             children: [
               SizedBox.expand(
@@ -305,7 +304,6 @@ class _TripScreenState extends State<TripScreen> {
                                 onPressed: isFull
                                     ? null
                                     : () {
-                                        // التحقق الحقيقي من حالة الدخول
                                         if (!isLoggedIn) {
                                           showDialog(
                                             context: context,
@@ -332,7 +330,6 @@ class _TripScreenState extends State<TripScreen> {
                                             ),
                                           );
                                         } else {
-                                          // الانتقال لشاشة الحجز لأن المستخدم مسجل دخول بالفعل
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(

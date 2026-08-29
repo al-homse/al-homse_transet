@@ -3,7 +3,7 @@ import 'register_screen.dart';
 import 'admin_dashboard.dart';
 import '../api_service.dart';
 import 'trip.dart';
-import 'app_drawer.dart'; // استيراد القائمة الجانبية
+import 'app_drawer.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -33,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. التحقق من الأدمن السريع
       if (inputName == 'admin' && inputPhone == 'admin' && inputPass == 'admin') {
         Navigator.pushReplacement(
           context,
@@ -42,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      // 2. التحقق الحقيقي من جدول Customer في جوجل شيت عبر الـ API الجديد
       Map<String, dynamic> response = await ApiService.loginCustomer(
         passengerName: inputName,
         phoneNumber: inputPhone,
@@ -53,7 +51,6 @@ class _LoginScreenState extends State<LoginScreen> {
       String message = response['message'] ?? 'حدث خطأ ما';
 
       if (status == 'success') {
-        // حالة ناجحة
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
@@ -64,15 +61,12 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else if (status == 'wrong_credentials') {
-        // الاسم موجود ولكن رقم الهاتف أو كلمة المرور خطأ
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.red),
         );
       } else if (status == 'not_found') {
-        // الاسم غير مسجل نهائياً -> إظهار نافذة إنشاء حساب
         _showNotRegisteredDialog();
       } else {
-        // أخطاء عامة أخرى
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.orange),
         );
@@ -118,7 +112,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // إضافة شريط العلوي AppBar لفتح القائمة الجانبية بسهولة
       appBar: AppBar(
         title: const Text('تسجيل الدخول', style: TextStyle(color: Colors.white, fontSize: 18)),
         centerTitle: true,
@@ -126,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // ربط القائمة الجانبية هنا أيضاً لتوحيد واجهات التطبيق
+      // إزالة الconst لأن قيم الحقول تتغير ديناميكياً
       drawer: AppDrawer(
         userName: _nameController.text.isEmpty ? 'زائر' : _nameController.text,
         userPhone: _phoneController.text.isEmpty ? '+963 ...' : _phoneController.text,
@@ -165,7 +158,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blue[900]),
                     ),
                     const SizedBox(height: 20),
-                    // حقل الاسم الثلاثي
                     TextField(
                       controller: _nameController,
                       keyboardType: TextInputType.text,
@@ -174,10 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: const Icon(Icons.person),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onChanged: (_) => setState(() {}), // لتحديث بيانات القائمة الجانبية فورياً
+                      onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 15),
-                    // حقل رقم الهاتف
                     TextField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
@@ -189,7 +180,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 15),
-                    // حقل كلمة المرور
                     TextField(
                       controller: _passwordController,
                       obscureText: true,

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'trip.dart';      // استيراد شاشة مواعيد الرحلات الحقيقية
-import 'login_screen.dart';     // استيراد شاشة تسجيل الدخول الحقيقية
-import 'register_screen.dart';  // استيراد شاشة إنشاء الحساب الحقيقية
-import 'app_drawer.dart';       // استيراد القائمة الجانبية
+import 'trip.dart';      
+import 'login_screen.dart';     
+import 'register_screen.dart';  
+import 'app_drawer.dart';       
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({Key? key}) : super(key: key);
@@ -10,27 +10,21 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ربط القائمة الجانبية بالشاشة مع بيانات الزائر/المستخدم الافتراضية
       drawer: const AppDrawer(
         userName: 'زائر',
         userPhone: 'غير مسجل',
       ),
       body: Stack(
         children: [
-          // 1. طبقة الصورة الخلفية (تغطي الشاشة بالكامل)
           SizedBox.expand(
             child: Image.asset(
-              'assets/images/logo.png', // تأكد من مسار الصورة لديك
-              fit: BoxFit.cover, // لتغطية الشاشة بالكامل دون تشوه
+              'assets/images/logo.png',
+              fit: BoxFit.cover,
             ),
           ),
-
-          // 2. طبقة تعتيم (Overlay) فوق الصورة لكي تظهر النصوص والأزرار بوضوح
           Container(
-            color: Colors.black.withOpacity(0.5), // درجة التعتيم
+            color: Colors.black.withOpacity(0.5),
           ),
-
-          // 3. زر سحب أو إظهار القائمة الجانبية في أعلى الشاشة (اختياري لسهولة الاستخدام)
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -47,8 +41,6 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
           ),
-
-          // 4. المحتويات والنصوص والأزرار في المقدمة
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -77,8 +69,6 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-
-                  // زر استعراض الرحلات (ينقل مباشرة إلى شاشة TripScreen لعرض مواعيد الرحلات)
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 55),
@@ -91,7 +81,7 @@ class WelcomeScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>  TripScreen(),
+                          builder: (context) => const TripScreen(),
                         ),
                       );
                     },
@@ -101,8 +91,6 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 15),
-
-                  // زر تسجيل الدخول (مربوط بشاشة LoginScreen الحقيقية)
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(double.infinity, 55),
@@ -114,7 +102,7 @@ class WelcomeScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) =>  LoginScreen()),
+                        MaterialPageRoute(builder: (context) => const LoginScreen()),
                       );
                     },
                     child: const Text(
@@ -123,8 +111,6 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 15),
-
-                  // زر إنشاء حساب (مربوط بشاشة RegisterScreen الحقيقية)
                   TextButton(
                     onPressed: () {
                       Navigator.push(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart'; // استيراد خدمة الـ API
 import 'trip.dart'; // الانتقال لشاشة الرحلات عند النجاح
+import 'app_drawer.dart'; // استيراد القائمة الجانبية
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -84,6 +85,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         backgroundColor: Colors.blue[900],
         iconTheme: const IconThemeData(color: Colors.white),
       ),
+      // إضافة القائمة الجانبية مع تمرير البيانات الحالية من الحقول
+      drawer: AppDrawer(
+        userName: _nameController.text.isEmpty ? 'زائر' : _nameController.text,
+        userPhone: _phoneController.text.isEmpty ? '+963 ...' : _phoneController.text,
+      ),
       body: Stack(
         children: [
           SizedBox.expand(
@@ -126,6 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: const Icon(Icons.person),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
+                      onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 15),
                     TextField(
@@ -136,6 +143,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         prefixIcon: const Icon(Icons.phone),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
+                      onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 15),
                     TextField(
