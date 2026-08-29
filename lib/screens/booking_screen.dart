@@ -9,6 +9,8 @@ class BookingScreen extends StatefulWidget {
   final String price;           // السعر القادم من قاعدة البيانات
   final int availableSeats;     // المقاعد المتاحة ديناميكياً من الجدول
   final int totalSeats;         // إجمالي المقاعد للرحلة
+  final String currentUserName; // اسم المستخدم المسجل حالياً
+  final String currentUserPhone;// رقم هاتف المستخدم المسجل حالياً
 
   const BookingScreen({
     Key? key,
@@ -18,6 +20,8 @@ class BookingScreen extends StatefulWidget {
     required this.price,
     required this.availableSeats,
     required this.totalSeats,
+    this.currentUserName = 'عادل',
+    this.currentUserPhone = '+963 999 000 111',
   }) : super(key: key);
 
   @override
@@ -31,10 +35,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
   final TextEditingController _otherNameController = TextEditingController();
   final TextEditingController _otherPhoneController = TextEditingController();
-
-  // بيانات المستخدم الحقيقية للحساب الشخصي
-  final String myName = 'عادل'; 
-  final String myPhone = '+963 999 000 111';
 
   late String selectedCategory;
   late List<Map<String, dynamic>> categoriesList;
@@ -87,10 +87,10 @@ class _BookingScreenState extends State<BookingScreen> {
         Uri.parse(scriptUrl),
         body: jsonEncode({
           "action": "addBooking",
-          "trip_id": widget.tripId, // تم ربطه بالـ trip_id الفعلي الصحيح
+          "trip_id": widget.tripId,
           "phone_number": passengerPhone,
           "passenger_name": passengerName,
-          "seat_number": selectedSeatCount.toString(), // عدد المقاعد المحجوزة
+          "seat_number": selectedSeatCount.toString(),
           "ticket_class": selectedCategory,
           "ticket_price": '${finalPriceNumeric.toStringAsFixed(0)} ل.س',
           "payment_status": selectedPaymentMethod,
@@ -114,15 +114,13 @@ class _BookingScreenState extends State<BookingScreen> {
       orElse: () => categoriesList[0],
     );
     
-    // حساب السعر الإجمالي (سعر الفئة × عدد المقاعد المختارة)
     double unitPrice = currentCategoryData['price'];
     double totalPriceNumeric = unitPrice * selectedSeatCount;
     String finalPriceDisplay = '${totalPriceNumeric.toStringAsFixed(0)} ل.س';
 
-    String passengerName = (bookingType == 'self') ? myName : _otherNameController.text;
-    String passengerPhone = (bookingType == 'self') ? myPhone : _otherPhoneController.text;
+    String passengerName = (bookingType == 'self') ? widget.currentUserName : _otherNameController.text;
+    String passengerPhone = (bookingType == 'self') ? widget.currentUserPhone : _otherPhoneController.text;
 
-    // التأكد من أن عدد المقاعد المتاحة لا يقل عن 1 لتفادي أخطاء القائمة المنسدلة
     int maxAvailableSeats = widget.availableSeats > 0 ? widget.availableSeats : 1;
     if (selectedSeatCount > maxAvailableSeats) {
       selectedSeatCount = maxAvailableSeats;
@@ -205,7 +203,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       const Text('لمن يتم حجز هذا المقعد؟', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       RadioListTile<String>(
-                        title: Text('الحجز لنفسي ($myName - $myPhone)'),
+                        title: Text('الحجز لنفسي (${widget.currentUserName} - ${widget.currentUserPhone})'),
                         value: 'self',
                         groupValue: bookingType,
                         onChanged: (value) {
@@ -370,24 +368,20 @@ class _BookingScreenState extends State<BookingScreen> {
                       return;
                     }
 
-                    // مؤشر تحميل أثناء الإرسال
                     showDialog(
                       context: context,
                       barrierDismissible: false,
                       builder: (context) => const Center(child: CircularProgressIndicator()),
                     );
 
-                    // إرسال البيانات لجوجل شيت مع الـ trip_id الحقيقي
                     await sendBookingToGoogleSheet(
                       passengerName: passengerName,
                       passengerPhone: passengerPhone,
                       finalPriceNumeric: totalPriceNumeric,
                     );
 
-                    // إغلاق مؤشر التحميل
                     Navigator.pop(context);
 
-                    // إظهار نافذة تفاصيل الحجز
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -437,6 +431,20 @@ class _BookingScreenState extends State<BookingScreen> {
                   child: const Text(
                     'تأكيد الحجز النهائي',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+                
+                const SizedBox(height: 12),
+
+                // زر العودة للشاشة الرئيسية
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.popUntil(context, (route) => route.isFirst);
+                  },
+                  icon: const Icon(Icons.home, color: Colors.white),
+                  label: const Text(
+                    'العودة للشاشة الرئيسية',
+                    style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
