@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // مكتبة ال�
 import 'register_screen.dart';
 import 'admin_dashboard.dart';
 import '../api_service.dart';
-import 'trip.dart';
+import 'welcome_screen.dart'; // تم استبدال استدعاء trip.dart بـ welcome_screen.dart
 import 'app_drawer.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -68,11 +68,14 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
-        Navigator.pushReplacement(
+
+        // التعديل هنا: الانتقال إلى شاشة الترحيب (الرئيسية) ومسح ستاك الصفحات السابقة
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => const TripScreen(isLoggedIn: true),
+            builder: (context) => const WelcomeScreen(),
           ),
+          (route) => false,
         );
       } else if (status == 'wrong_credentials') {
         ScaffoldMessenger.of(context).showSnackBar(

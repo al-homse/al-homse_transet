@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // مكتبة التخزين المحلي
 import '../api_service.dart'; // استيراد خدمة الـ API
-import 'trip.dart'; // الانتقال لشاشة الرحلات عند النجاح
+import 'welcome_screen.dart'; // الانتقال لشاشة الترحيب الرئيسية عند النجاح
 import 'app_drawer.dart'; // استيراد القائمة الجانبية
 
 class RegisterScreen extends StatefulWidget {
@@ -16,6 +17,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   String _preferredClass = 'VIP'; // الفئة المفضلة الافتراضية
   bool _isLoading = false;
+
+  // دالة حفظ بيانات الجلسة محلياً بعد التسجيل الناجح
+  Future<void> _saveUserSession(String name, String phone) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+    await prefs.setString('userName', name);
+    await prefs.setString('userPhone', phone);
+  }
 
   void _handleRegister() async {
     String name = _nameController.text.trim();
@@ -44,15 +53,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String message = response['message'] ?? 'حدث خطأ ما';
 
       if (status == 'success') {
+        // << حفظ بيانات الجلسة محلياً لضمان ظهور الاسم في الترحيب والقائمة >>
+        await _saveUserSession(name, phone);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم إنشاء الحساب وتسجيل الدخول بنجاح!')),
         );
         
-        // الانتقال لشاشة الرحلات مع تمرير حالة تسجيل الدخول وحذف شاشات الدخول والتسجيل من التراكم
+        // الانتقال لشاشة الترحيب الرئيسية وحذف شاشات الدخول والتسجيل من التراكم
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => const TripScreen(isLoggedIn: true),
+            builder: (context) => const WelcomeScreen(),
           ),
           (route) => false,
         );
