@@ -26,7 +26,7 @@ class AppDrawer extends StatelessWidget {
               userName,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-            accountDescription: Text(
+            accountEmail: Text(
               userPhone,
               style: const TextStyle(color: Colors.white70),
             ),
