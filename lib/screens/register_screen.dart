@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../api_service.dart'; // استيراد خدمة الـ API
-import 'trip_screen.dart'; // الانتقال لشاشة الرحلات عند النجاح
+import 'trip.dart'; // الانتقال لشاشة الرحلات عند النجاح
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);

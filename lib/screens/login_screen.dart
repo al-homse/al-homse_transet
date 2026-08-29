@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'admin_dashboard.dart';
 import '../api_service.dart';
-import 'trip_screen.dart';
+import 'trip.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
