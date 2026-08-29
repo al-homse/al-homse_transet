@@ -1,21 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // مكتبة التخزين المحلي لمسح بيانات الجلسة عند الخروج
+import 'package:shared_preferences/shared_preferences.dart';
 import 'my_trips_screen.dart';
 import 'my_bookings_screen.dart';
 import 'profile_screen.dart';
 import 'login_screen.dart';
-import 'welcome_screen.dart'; // استيراد شاشة الترحيب
-import 'trip.dart'; // الشاشة الرئيسة للرحلات
+import 'welcome_screen.dart';
 
-class AppDrawer extends StatelessWidget {
-  final String userName;
-  final String userPhone;
+class AppDrawer extends StatefulWidget {
+  const AppDrawer({Key? key}) : super(key: key);
 
-  const AppDrawer({
-    Key? key,
-    required this.userName,
-    required this.userPhone,
-  }) : super(key: key);
+  @override
+  State<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends State<AppDrawer> {
+  String _userName = 'زائر';
+  String _userPhone = 'غير مسجل';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // جلب البيانات المخزنة محلياً عند فتح القائمة
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('userName') ?? 'زائر';
+      _userPhone = prefs.getString('userPhone') ?? 'غير مسجل';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +40,11 @@ class AppDrawer extends StatelessWidget {
         children: [
           UserAccountsDrawerHeader(
             accountName: Text(
-              userName,
+              _userName,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             accountEmail: Text(
-              userPhone,
+              _userPhone,
               style: const TextStyle(color: Colors.white70),
             ),
             currentAccountPicture: const CircleAvatar(
@@ -41,81 +56,69 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
           
-          // 0. الصفحة الرئيسية (الرجوع لشاشة الترحيب)
+          // الصفحة الرئيسية
           ListTile(
             leading: const Icon(Icons.home, color: Colors.blue),
             title: const Text('الصفحة الرئيسية'),
             onTap: () {
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const WelcomeScreen(),
-                ),
+                MaterialPageRoute(builder: (context) => const WelcomeScreen()),
                 (route) => false,
               );
             },
           ),
 
-          // 1. رحلاتي
+          // رحلاتي
           ListTile(
             leading: const Icon(Icons.directions_bus, color: Colors.blue),
             title: const Text('رحلاتي'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => MyTripsScreen(userPhone: userPhone),
-                ),
+                MaterialPageRoute(builder: (context) => MyTripsScreen(userPhone: _userPhone)),
               );
             },
           ),
 
-          // 2. حجوزاتي
+          // حجوزاتي
           ListTile(
             leading: const Icon(Icons.bookmark, color: Colors.blue),
             title: const Text('حجوزاتي'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => MyBookingsScreen(userPhone: userPhone, userName: userName),
-                ),
+                MaterialPageRoute(builder: (context) => MyBookingsScreen(userPhone: _userPhone, userName: _userName)),
               );
             },
           ),
 
-          // 3. حسابي / الملف الشخصي
+          // حسابي وملفي الشخصي
           ListTile(
             leading: const Icon(Icons.person, color: Colors.blue),
             title: const Text('حسابي وملفي الشخصي'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => ProfileScreen(userName: userName, userPhone: userPhone),
-                ),
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
               );
             },
           ),
 
           const Divider(),
 
-          // 4. تسجيل الخروج
+          // تسجيل الخروج
           ListTile(
             leading: const Icon(Icons.exit_to_app, color: Colors.red),
             title: const Text('تسجيل الخروج', style: TextStyle(color: Colors.red)),
             onTap: () async {
-              // مسح بيانات الجلسة المخزنة محلياً عند تسجيل الخروج
               final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
+              await prefs.clear(); // مسح الذاكرة بالكامل
 
-              // العودة إلى شاشة الترحيب وحذف الصفحات السابقة من الذاكرة
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const WelcomeScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const WelcomeScreen()),
                   (route) => false,
                 );
               }
