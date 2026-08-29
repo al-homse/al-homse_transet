@@ -12,7 +12,7 @@ class IdleTimeoutWrapper extends StatefulWidget {
   const IdleTimeoutWrapper({
     Key? key,
     required this.child,
-    this.timeoutDuration = const Duration(minutes: 5),
+    this.timeoutDuration = const Duration(minutes: 60),
   }) : super(key: key);
 
   @override

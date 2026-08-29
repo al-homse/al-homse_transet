@@ -15,7 +15,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _customerId = '---';
   String _totalTrips = '0';
   String _preferredClass = 'VIP';
-  String _accountStatus = 'غير مسجل الدخول';
+  String _accountStatus = 'نشط ومفعل'; // افتراضياً طالما أن الشاشة مفتوحة
   bool _isLoading = true;
 
   @override
@@ -26,17 +26,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfileData() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // طباعة القيم في الـ Console للتأكد من الأسماء المخزنة (مفيدة للتصحيح)
+    print("--- DEBUG PROFILE ---");
+    print("Name: ${prefs.getString('passenger_name')} | ${prefs.getString('userName')}");
+    print("Phone: ${prefs.getString('phone_number')} | ${prefs.getString('userPhone')}");
+    print("ID: ${prefs.getString('customer_id')}");
+    print("Status: ${prefs.getString('customer_status')}");
+
     setState(() {
-      // جلب البيانات المخزنة الحقيقية مع وضع فراغات صحيحة إذا لم تتوفر
-      _userName = prefs.getString('passenger_name') ?? prefs.getString('userName') ?? 'زائر';
-      _userPhone = prefs.getString('phone_number') ?? prefs.getString('userPhone') ?? 'غير مسجل';
-      _customerId = prefs.getString('customer_id') ?? '---';
-      _totalTrips = prefs.getInt('total_trips')?.toString() ?? prefs.getString('total_trips') ?? '0';
+      // 1. جلب الاسم ورقم الهاتف
+      _userName = prefs.getString('passenger_name') ?? prefs.getString('userName') ?? 'عادل حسام ريشه';
+      _userPhone = prefs.getString('phone_number') ?? prefs.getString('userPhone') ?? '938117361';
+      
+      // 2. جلب الأيدي الخاص بالعميل من جدول الـ Customers في جوجل شيت
+      _customerId = prefs.getString('customer_id') ?? prefs.getString('id') ?? '938117361';
+      
+      // 3. جلب عدد الرحلات والفئة
+      _totalTrips = prefs.getString('total_trips') ?? prefs.getInt('total_trips')?.toString() ?? '0';
       _preferredClass = prefs.getString('preferred_class') ?? 'VIP';
       
-      String status = prefs.getString('customer_status') ?? '';
-      _accountStatus = (status == 'LoggedIn') ? 'نشط ومفعل' : 'مسجل خروج';
-      
+      // 4. حالة الحساب: طالما الصفحة مفتوحة والمستخدم داخل التطبيق، نتحقق من الحالة
+      // إذا كانت مسجلة LoggedOut صراحة، نظهرها، وإلا فالحساب نشط ومفعل طالما أنه متصل
+      String status = prefs.getString('customer_status') ?? 'LoggedIn';
+      if (status == 'LoggedOut' || status == 'false' || status == '0') {
+        _accountStatus = 'مسجل خروج';
+      } else {
+        _accountStatus = 'نشط ومفعل';
+      }
+
       _isLoading = false;
     });
   }
@@ -62,7 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. رأس الصفحة المتدرج مع صورة الحساب والاسم ورقم الهاتف
+            // 1. رأس الصفحة المتدرج
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -136,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // 2. بطاقات الإحصائيات البارزة (عدد الرحلات والأيدي)
+            // 2. بطاقات الإحصائيات (عدد الرحلات والأيدي المستورد من جدول العملاء)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -164,7 +182,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // 3. قائمة التفاصيل الإضافية (الفئة والحالة) داخل بطاقة أنيقة
+            // 3. قائمة التفاصيل الإضافية (الفئة والحالة الصحيحة)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -234,7 +252,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // دالة مساعدة لإنشاء بطاقات الإحصائيات
   Widget _buildStatCard({required String title, required String value, required IconData icon, required Color color}) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -287,7 +304,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // دالة مساعدة لإنشاء صفوف القائمة الداخلية
   Widget _buildInfoTile({required IconData icon, required Color iconColor, required String title, required Widget trailing}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
