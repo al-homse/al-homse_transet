@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart'; // استدعاء التخزين المحلي
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app_drawer.dart';
+import 'login_screen.dart'; // استدعاء شاشة تسجيل الدخول للتحويل إليها إذا لم يكن مسجلاً
 
 class BookingScreen extends StatefulWidget {
   final String tripId;          
@@ -27,16 +28,18 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
+  bool _isCheckingAuth = true; // متغير للتحقق من حالة الدخول
+  bool _isLoggedIn = false;
+  
+  String currentUserName = '';
+  String currentUserPhone = '';
+
   int bookingStep = 1;
   String bookingType = 'self';
   int selectedSeatCount = 1; 
 
   final TextEditingController _otherNameController = TextEditingController();
   final TextEditingController _otherPhoneController = TextEditingController();
-
-  // متغيرات لجلب البيانات الحقيقية للمستخدم من الذاكرة
-  String currentUserName = 'جاري التحميل...';
-  String currentUserPhone = '';
 
   late String selectedCategory;
   late List<Map<String, dynamic>> categoriesList;
@@ -45,13 +48,12 @@ class _BookingScreenState extends State<BookingScreen> {
   final String driverPhone = '+963 933 123 456';
 
   String selectedPaymentMethod = 'الدفع عند الصعود';
-
   final String scriptUrl = 'https://script.google.com/macros/s/AKfycbycasw7Usvui5S2UO5m3mRDONR9FBFS7qFzB1PHEXw2dd4tIRynDCA6VSqvXLct5Ghs/exec';
 
   @override
   void initState() {
     super.initState();
-    _loadUserData(); // جلب البيانات الحقيقية فور فتح الشاشة
+    _checkAuthenticationAndLoadData(); // التحقق الصارم من تسجيل الدخول أولاً
     
     double basePrice = double.tryParse(widget.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 70000;
     double businessPrice = basePrice + 30000;
@@ -74,12 +76,26 @@ class _BookingScreenState extends State<BookingScreen> {
     selectedCategory = categoriesList[0]['key'];
   }
 
-  // دالة لجلب البيانات الحقيقية من SharedPreferences بدون أي قيم وهمية
-  Future<void> _loadUserData() async {
+  // دالة لفحص هل المستخدم مسجل دخول حقاً من الذاكرة المحلية
+  Future<void> _checkAuthenticationAndLoadData() async {
     final prefs = await SharedPreferences.getInstance();
+    bool loggedIn = prefs.getBool('isLoggedIn') ?? false;
+    
+    if (!loggedIn) {
+      // إذا لم يكن مسجل دخول، نوقف التحميل ونعلمه أو نخرجه فوراً
+      setState(() {
+        _isLoggedIn = false;
+        _isCheckingAuth = false;
+      });
+      return;
+    }
+
+    // إذا كان مسجل دخول، نجلب بياناته الحقيقية
     setState(() {
-      currentUserName = prefs.getString('userName') ?? prefs.getString('passenger_name') ?? 'زائر';
+      _isLoggedIn = true;
+      currentUserName = prefs.getString('userName') ?? prefs.getString('passenger_name') ?? '';
       currentUserPhone = prefs.getString('userPhone') ?? prefs.getString('phone_number') ?? '';
+      _isCheckingAuth = false;
     });
   }
 
@@ -119,6 +135,53 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. إذا كان النظام ما زال يتحقق من حالة الدخول، نظهر شاشة تحميل مؤقتة
+    if (_isCheckingAuth) {
+      return Scaffold(
+        appBar: AppBar(backgroundColor: Colors.blue[900]),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // 2. إذا لم يكن مسجل دخول أبداً، نمنع عرض صفحة الحجز ونظهر رسالة أو نوجهه لتسجيل الدخول
+    if (!_isLoggedIn) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('خطأ في الصلاحيات', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.blue[900],
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_outline, size: 80, color: Colors.red),
+                const SizedBox(height: 20),
+                const Text(
+                  'يجب تسجيل الدخول أولاً لكي تتمكن من حجز المقاعد!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue[900]),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    );
+                  },
+                  child: const Text('الذهاب لتسجيل الدخول', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 3. إذا كان مسجل دخول وصحيح 100%، تعرض شاشة الحجز الطبيعية تماماً
     final currentCategoryData = categoriesList.firstWhere(
       (cat) => cat['key'] == selectedCategory,
       orElse: () => categoriesList[0],
