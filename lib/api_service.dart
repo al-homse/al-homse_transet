@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 class ApiService {
   // رابط Google Apps Script الخاص بك
   static const String webAppUrl =
-      'https://script.google.com/macros/s/AKfycbxUC1JP7UbiyY4T9lnNsYknV0R94S80KlCVc6eqvarq1Y0rhlEhftHJ5y7SBmiusQJO/exec';
+      'https://script.google.com/macros/s/AKfycbxC5YBbUaPqaWEuXEuUS6QZb60rB-DMB07VZBEGszu753OswDg8Ya76gzf5yEcKuQ9a/exec';
 
   // =================================================================
   // 1. دالة لجلب الرحلات من جدول Trips

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import '../api_service.dart'; // تأكد من مسار الـ ApiService لديك
+import '../api_service.dart'; 
 import 'login_screen.dart';
 
 class MyTripsScreen extends StatefulWidget {
@@ -24,13 +24,11 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     _checkUserAndFetchTrips();
   }
 
-  // التحقق من حالة تسجيل الدخول وجلب الرحلات الخاصة برقم الهاتف المخزن
   Future<void> _checkUserAndFetchTrips() async {
     final prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
     String phone = prefs.getString('phone_number') ?? prefs.getString('userPhone') ?? '';
 
-    // إذا كان الحساب زائر أو لا يوجد رقم هاتف مسجل
     if (!isLoggedIn || phone.isEmpty) {
       setState(() {
         _isLoggedIn = false;
@@ -44,14 +42,11 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       _customerPhone = phone;
     });
 
-    // جلب الرحلات الخاصة بهذا الرقم من الـ API
     await _fetchCustomerTrips(phone);
   }
 
   Future<void> _fetchCustomerTrips(String phone) async {
     try {
-      // استدعاء جلب الرحلات أو الحجوزات الخاصة بالمستخدم من الـ WebApp
-      // (يمكنك تعديل أو إضافة دالة في ApiService أو استدعاء الرابط مباشرة بناءً على تصميم الشيت لديك)
       final response = await http.get(
         Uri.parse('${ApiService.webAppUrl}?action=getCustomerBookings&phone_number=$phone'),
       );
@@ -70,7 +65,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
           });
         } else {
           setState(() {
-            _userTrips = []; // لا توجد رحلات وهمية أو افتراضية
+            _userTrips = [];
             _isLoading = false;
           });
         }
@@ -83,22 +78,79 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     }
   }
 
-  // تحديد لون حالة الرحلة بحسب المطلوب
+  // دالة ذكية لحساب حالة الرحلة تلقائياً بناءً على الوقت والتاريخ وعمود M (وقت الانتهاء)
+  String _calculateDynamicStatus(Map<String, dynamic> trip) {
+    String originalStatus = trip['booking_status'] ?? 'Confirmed';
+    if (originalStatus.toLowerCase() == 'cancelled' || originalStatus == 'ملغاة') {
+      return 'ملغاة';
+    }
+
+    try {
+      String dateStr = trip['trip_date'] ?? '';
+      String departureStr = trip['departure_time'] ?? '';
+      String arrivalStr = trip['arrival_time'] ?? ''; // وقت الانتهاء من العمود M
+
+      if (dateStr.isEmpty || departureStr.isEmpty) return 'جارية';
+
+      DateTime now = DateTime.now();
+      
+      // تحليل التاريخ (نفترض صيغة يطابقها الشيت مثل YYYY-MM-DD أو دمجها)
+      // سنقوم بمحاولة تحليل التاريخ بمرونة
+      DateTime? tripDate = DateTime.tryParse(dateStr);
+      if (tripDate == null) return 'جارية';
+
+      // دمج تاريخ الرحلة مع وقت الانطلاق ووقت الوصول للمقارنة الدقيقة
+      DateTime startDateTime = _parseDateTimeCombined(tripDate, departureStr);
+      DateTime endDateTime = arrivalStr.isNotEmpty 
+          ? _parseDateTimeCombined(tripDate, arrivalStr) 
+          : startDateTime.add(const Duration(hours: 3)); // افتراض مدة 3 ساعات إذا لم يُحدد عمود M بدقة
+
+      if (now.isBefore(startDateTime)) {
+        return 'لم تبدأ بعد';
+      } else if (now.isAfter(startDateTime) && now.isBefore(endDateTime)) {
+        return 'جارية';
+      } else {
+        return 'منتهية';
+      }
+    } catch (e) {
+      return 'جارية';
+    }
+  }
+
+  DateTime _parseDateTimeCombined(DateTime datePart, String timeStr) {
+    try {
+      // معالجة صيغ مثل "08:00 AM"
+      bool isPM = timeStr.toUpperCase().contains('PM');
+      bool isAM = timeStr.toUpperCase().contains('AM');
+      
+      String cleanTime = timeStr.replaceAll(RegExp(r'[^0-9:]'), '');
+      List<String> parts = cleanTime.split(':');
+      int hour = parts.isNotEmpty ? int.parse(parts[0]) : 0;
+      int minute = parts.length > 1 ? int.parse(parts[1]) : 0;
+
+      if (isPM && hour < 12) hour += 12;
+      if (isAM && hour == 12) hour = 0;
+
+      return DateTime(datePart.year, datePart.month, datePart.day, hour, minute);
+    } catch (e) {
+      return datePart;
+    }
+  }
+
+  // تحديد لون حالة الرحلة (مع إضافة اللون الأزرق لـ "لم تبدأ بعد")
   Color _getStatusColor(String status) {
-    switch (status.trim().toLowerCase()) {
-      case 'مكتملة':
-      case 'completed':
+    switch (status.trim()) {
+      case 'منتهية':
+      case 'Completed':
         return Colors.green;
       case 'جارية':
-      case 'ongoing':
-      case 'active':
+      case 'Ongoing':
         return Colors.amber[800]!;
+      case 'لم تبدأ بعد':
+        return Colors.blue; // اللون المطلوب للرحلات التي لم تبدأ
       case 'ملغاة':
-      case 'cancelled':
+      case 'Cancelled':
         return Colors.red;
-      case 'فائتة':
-      case 'missed':
-        return Colors.black;
       default:
         return Colors.grey;
     }
@@ -116,12 +168,11 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : !_isLoggedIn
-              ? _buildGuestView() // 1. حالة الزائر
-              : _buildUserTripsView(), // 2. حالة المستخدم المسجل
+              ? _buildGuestView() 
+              : _buildUserTripsView(), 
     );
   }
 
-  // واجهة الزائر (عندما لا يكون مسجلاً)
   Widget _buildGuestView() {
     return Center(
       child: Padding(
@@ -157,7 +208,6 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     );
   }
 
-  // واجهة قائمة الرحلات للمستخدم المسجل (بدون أي بيانات تجريبية)
   Widget _buildUserTripsView() {
     if (_userTrips.isEmpty) {
       return Center(
@@ -181,13 +231,14 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       itemBuilder: (context, index) {
         final trip = _userTrips[index];
         
-        // مفاتيح البيانات القادمة من الشيت (تأكد من مطابقتها لأعمدة جدول الحجوزات لديك)
         String tripId = trip['trip_id'] ?? trip['id'] ?? '---';
         String routeLine = trip['route'] ?? trip['line'] ?? 'حمص - دمشق';
-        String date = trip['date'] ?? trip['trip_date'] ?? '---';
-        String time = trip['time'] ?? trip['departure_time'] ?? '---';
-        String status = trip['status'] ?? 'جارية'; // الحالة الافتراضية أو القادمة من السيرفر
+        String date = trip['trip_date'] ?? '---';
+        String time = trip['departure_time'] ?? '---';
+        String arrivalTime = trip['arrival_time'] ?? '---'; // وقت الانتهاء من عمود M
 
+        // حساب الحالة ديناميكياً (لم تبدأ بعد، جارية، منتهية، ملغاة)
+        String status = _calculateDynamicStatus(trip);
         Color statusColor = _getStatusColor(status);
 
         return Card(
@@ -199,7 +250,6 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // الصف العلوي: معرف الرحلة وحالة الرحلة الملونة
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -222,7 +272,6 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                   ],
                 ),
                 const Divider(height: 20),
-                // الخط / الاتجاه
                 Row(
                   children: [
                     const Icon(Icons.alt_route, size: 18, color: Colors.grey),
@@ -231,7 +280,6 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                // تاريخ وموعد الانطلاق
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -249,6 +297,14 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
                         Text('الانطلاق: $time', style: const TextStyle(fontSize: 13, color: Colors.grey)),
                       ],
                     ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.timer_off_outlined, size: 16, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text('الوصول (الانتهاء): $arrivalTime', style: const TextStyle(fontSize: 13, color: Colors.grey)),
                   ],
                 ),
               ],
