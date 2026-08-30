@@ -78,7 +78,28 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     }
   }
 
-  // دالة ذكية لحساب حالة الرحلة تلقائياً بناءً على الوقت والتاريخ وعمود M (وقت الانتهاء)
+  // دالة لتنظيف وعرض الوقت بنظافة سواء جاء كنص أو بصيغة زمنيّة من الشيت
+  String _formatTimeDisplay(dynamic timeVal) {
+    if (timeVal == null) return '---';
+    String str = timeVal.toString();
+    
+    if (str.contains('T')) {
+      try {
+        DateTime parsed = DateTime.parse(str);
+        int hour = parsed.hour;
+        int minute = parsed.minute;
+        String period = hour >= 12 ? 'PM' : 'AM';
+        if (hour > 12) hour -= 12;
+        if (hour == 0) hour = 12;
+        return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+      } catch (e) {
+        return str;
+      }
+    }
+    return str;
+  }
+
+  // دالة ذكية لحساب حالة الرحلة تلقائياً ودعم صيغ الشيت الزمنية
   String _calculateDynamicStatus(Map<String, dynamic> trip) {
     String originalStatus = trip['booking_status'] ?? 'Confirmed';
     if (originalStatus.toLowerCase() == 'cancelled' || originalStatus == 'ملغاة') {
@@ -87,39 +108,48 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
 
     try {
       String dateStr = trip['trip_date'] ?? '';
-      String departureStr = trip['departure_time'] ?? '';
-      String arrivalStr = trip['arrival_time'] ?? ''; // وقت الانتهاء من العمود M
+      var departureVal = trip['departure_time'];
+      var arrivalVal = trip['arrival_time'];
 
-      if (dateStr.isEmpty || departureStr.isEmpty) return 'جارية';
+      if (dateStr.isEmpty || departureVal == null) return 'جارية';
 
       DateTime now = DateTime.now();
-      
-      // تحليل التاريخ (نفترض صيغة يطابقها الشيت مثل YYYY-MM-DD أو دمجها)
-      // سنقوم بمحاولة تحليل التاريخ بمرونة
       DateTime? tripDate = DateTime.tryParse(dateStr);
       if (tripDate == null) return 'جارية';
 
-      // دمج تاريخ الرحلة مع وقت الانطلاق ووقت الوصول للمقارنة الدقيقة
-      DateTime startDateTime = _parseDateTimeCombined(tripDate, departureStr);
-      DateTime endDateTime = arrivalStr.isNotEmpty 
-          ? _parseDateTimeCombined(tripDate, arrivalStr) 
-          : startDateTime.add(const Duration(hours: 3)); // افتراض مدة 3 ساعات إذا لم يُحدد عمود M بدقة
+      DateTime startDateTime = _parseAnyDateTime(tripDate, departureVal);
+      
+      DateTime endDateTime;
+      if (arrivalVal != null && arrivalVal.toString().isNotEmpty) {
+        endDateTime = _parseAnyDateTime(tripDate, arrivalVal);
+        // إذا كان وقت الوصول يأتي قبل أو يساوي وقت الانطلاق، فهذا يعني أنه في اليوم التالي
+        if (endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)) {
+          endDateTime = endDateTime.add(const Duration(days: 1));
+        }
+      } else {
+        endDateTime = startDateTime.add(const Duration(hours: 3));
+      }
 
       if (now.isBefore(startDateTime)) {
-        return 'لم تبدأ بعد';
+        return 'لم تبدأ بعد'; // لون أزرق
       } else if (now.isAfter(startDateTime) && now.isBefore(endDateTime)) {
-        return 'جارية';
+        return 'جارية'; // لون برتقالي
       } else {
-        return 'منتهية';
+        return 'منتهية'; // لون أخضر
       }
     } catch (e) {
       return 'جارية';
     }
   }
 
-  DateTime _parseDateTimeCombined(DateTime datePart, String timeStr) {
+  DateTime _parseAnyDateTime(DateTime datePart, dynamic timeInput) {
     try {
-      // معالجة صيغ مثل "08:00 AM"
+      String timeStr = timeInput.toString();
+      if (timeStr.contains('T')) {
+        DateTime dt = DateTime.parse(timeStr);
+        return DateTime(datePart.year, datePart.month, datePart.day, dt.hour, dt.minute, dt.second);
+      }
+      
       bool isPM = timeStr.toUpperCase().contains('PM');
       bool isAM = timeStr.toUpperCase().contains('AM');
       
@@ -137,7 +167,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
     }
   }
 
-  // تحديد لون حالة الرحلة (مع إضافة اللون الأزرق لـ "لم تبدأ بعد")
+  // تحديد لون حالة الرحلة 
   Color _getStatusColor(String status) {
     switch (status.trim()) {
       case 'منتهية':
@@ -147,7 +177,7 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
       case 'Ongoing':
         return Colors.amber[800]!;
       case 'لم تبدأ بعد':
-        return Colors.blue; // اللون المطلوب للرحلات التي لم تبدأ
+        return Colors.blue; 
       case 'ملغاة':
       case 'Cancelled':
         return Colors.red;
@@ -234,10 +264,11 @@ class _MyTripsScreenState extends State<MyTripsScreen> {
         String tripId = trip['trip_id'] ?? trip['id'] ?? '---';
         String routeLine = trip['route'] ?? trip['line'] ?? 'حمص - دمشق';
         String date = trip['trip_date'] ?? '---';
-        String time = trip['departure_time'] ?? '---';
-        String arrivalTime = trip['arrival_time'] ?? '---'; // وقت الانتهاء من عمود M
+        
+        // استخدام دالة التنسيق لتنظيف وإظهار الأوقات بنظافة تامة
+        String time = _formatTimeDisplay(trip['departure_time']);
+        String arrivalTime = _formatTimeDisplay(trip['arrival_time']); 
 
-        // حساب الحالة ديناميكياً (لم تبدأ بعد، جارية، منتهية، ملغاة)
         String status = _calculateDynamicStatus(trip);
         Color statusColor = _getStatusColor(status);
 
