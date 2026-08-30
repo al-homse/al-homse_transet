@@ -28,18 +28,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
-      // 1. جلب الاسم ورقم الهاتف من المفاتيح الصحيحة
       _userName = prefs.getString('passenger_name') ?? prefs.getString('userName') ?? 'زائر';
       _userPhone = prefs.getString('phone_number') ?? prefs.getString('userPhone') ?? 'غير مسجل';
       
-      // 2. جلب معرف الحساب (ID) حصرياً من عمود customer_id الخاص بجدول العملاء
-      _customerId = prefs.getString('customer_id') ?? '---';
+      // جلب معرف الحساب حصرياً من عمود customer_id الخاص بجدول العملاء
+      _customerId = prefs.getString('customer_id') ?? 
+                    prefs.getString('customerId') ?? 
+                    prefs.getString('id') ?? '---';
       
-      // 3. جلب عدد الرحلات والفئة المفضلة
       _totalTrips = prefs.getString('total_trips') ?? prefs.getInt('total_trips')?.toString() ?? '0';
       _preferredClass = prefs.getString('preferred_class') ?? 'VIP';
       
-      // 4. حالة الحساب
       String status = prefs.getString('customer_status') ?? 'LoggedIn';
       if (status == 'LoggedOut' || status == 'false' || status == '0') {
         _accountStatus = 'مسجل خروج';
@@ -72,7 +71,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. رأس الصفحة المتدرج
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -146,7 +144,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // 2. بطاقات الإحصائيات (عدد الرحلات ومعرف المستخدم customer_id)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -163,7 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Expanded(
                     child: _buildStatCard(
                       title: 'معرف المستخدم (ID)',
-                      value: _customerId, // سيطبع AHR-093 القادم من جدول Customer
+                      value: _customerId, // سيعرض AHR-093 القادم من العمود A في جدول Customer
                       icon: Icons.badge_outlined,
                       color: Colors.purple,
                     ),
@@ -174,7 +171,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
 
-            // 3. قائمة التفاصيل الإضافية (الفئة والحالة)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
