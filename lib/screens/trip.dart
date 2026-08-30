@@ -94,7 +94,6 @@ class _TripScreenState extends State<TripScreen> {
                 ),
               ],
             ),
-            // إضافة القائمة الجانبية مع تمرير البيانات الافتراضية
             drawer: const AppDrawer(userName: 'زائر', userPhone: 'غير مسجل'),
             body: Stack(
               children: [
@@ -243,11 +242,10 @@ class _TripScreenState extends State<TripScreen> {
                         
                         String tripId = trip['trip_id']?.toString() ?? 'TRP-001';
                         
-                        // معالجة التاريخ بفعالية
+                        // معالجة التاريخ والوقت
                         String rawDate = trip['trip_date']?.toString() ?? '';
                         String tripDate = rawDate.contains('T') ? rawDate.split('T')[0] : rawDate;
 
-                        // معالجة وقت الانطلاق بفعالية
                         String departureTime = trip['departure_time']?.toString() ?? 'غير محدد';
                         if (departureTime.contains('T')) {
                           try {
@@ -282,7 +280,6 @@ class _TripScreenState extends State<TripScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // عرض التاريخ
                                   Row(
                                     children: [
                                       const Icon(Icons.calendar_today, color: Colors.blueAccent, size: 16),
@@ -294,7 +291,6 @@ class _TripScreenState extends State<TripScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 6),
-                                  // عرض وقت الانطلاق
                                   Row(
                                     children: [
                                       const Icon(Icons.access_time_filled_rounded, color: Colors.blueAccent, size: 16),
@@ -327,6 +323,7 @@ class _TripScreenState extends State<TripScreen> {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                 ),
+                                // إذا كانت الرحلة ممتلئة نعطل الزر، وإذا لم يكن مسجلاً للدخول نظهر رسالة التنبيه عند الضغط
                                 onPressed: isFull
                                     ? null
                                     : () {
