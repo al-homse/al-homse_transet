@@ -193,7 +193,7 @@ class _TripScreenState extends State<TripScreen> {
           );
         }
 
-        // الحالة الثانية: جدول المواعيد
+        // الحالة الثانية: جدول المواعيد للخط المحدد
         List<dynamic> filteredTrips = allTrips
             .where((trip) => trip['route']?.toString() == widget.routeName)
             .toList();
@@ -242,7 +242,20 @@ class _TripScreenState extends State<TripScreen> {
                         final trip = filteredTrips[index];
                         
                         String tripId = trip['trip_id']?.toString() ?? 'TRP-001';
+                        
+                        // معالجة التاريخ بفعالية
+                        String rawDate = trip['trip_date']?.toString() ?? '';
+                        String tripDate = rawDate.contains('T') ? rawDate.split('T')[0] : rawDate;
+
+                        // معالجة وقت الانطلاق بفعالية
                         String departureTime = trip['departure_time']?.toString() ?? 'غير محدد';
+                        if (departureTime.contains('T')) {
+                          try {
+                            DateTime parsedTime = DateTime.parse(departureTime);
+                            departureTime = "${parsedTime.hour.toString().padLeft(2, '0')}:${parsedTime.minute.toString().padLeft(2, '0')}";
+                          } catch (_) {}
+                        }
+
                         String vehicleId = trip['vehicle_id']?.toString() ?? trip['bus_number']?.toString() ?? 'باص';
                         int availableSeats = int.tryParse(trip['available_seats']?.toString() ?? '0') ?? 0;
                         int totalSeats = int.tryParse(trip['total_seats']?.toString() ?? '14') ?? 14; 
@@ -269,20 +282,33 @@ class _TripScreenState extends State<TripScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  // عرض التاريخ
                                   Row(
                                     children: [
-                                      const Icon(Icons.access_time_filled_rounded, color: Colors.blueAccent, size: 20),
-                                      const SizedBox(width: 8),
+                                      const Icon(Icons.calendar_today, color: Colors.blueAccent, size: 16),
+                                      const SizedBox(width: 6),
                                       Text(
-                                        departureTime,
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                                        'التاريخ: $tripDate',
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  // عرض وقت الانطلاق
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.access_time_filled_rounded, color: Colors.blueAccent, size: 16),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'الوقت: $departureTime',
+                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black87),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     'المركبة: $vehicleId',
-                                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                                    style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -335,7 +361,7 @@ class _TripScreenState extends State<TripScreen> {
                                             MaterialPageRoute(
                                               builder: (context) => BookingScreen(
                                                 tripId: tripId,
-                                                tripTime: departureTime,
+                                                tripTime: "$tripDate - $departureTime",
                                                 busNumber: vehicleId,
                                                 price: price,
                                                 availableSeats: availableSeats,
