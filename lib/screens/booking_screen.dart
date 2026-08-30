@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_drawer.dart';
-import 'login_screen.dart'; // استدعاء شاشة تسجيل الدخول للتحويل إليها إذا لم يكن مسجلاً
+import 'login_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final String tripId;          
@@ -12,6 +12,11 @@ class BookingScreen extends StatefulWidget {
   final String price;           
   final int availableSeats;     
   final int totalSeats;         
+  // إضافة البيانات الفعلية القادمة من الجدول لضمان عدم وجود أي قيم افتراضية
+  final String routeName;
+  final String tripDate;
+  final String driverName;
+  final String driverPhone;
 
   const BookingScreen({
     Key? key,
@@ -21,6 +26,10 @@ class BookingScreen extends StatefulWidget {
     required this.price,
     required this.availableSeats,
     required this.totalSeats,
+    required this.routeName,
+    required this.tripDate,
+    required this.driverName,
+    required this.driverPhone,
   }) : super(key: key);
 
   @override
@@ -28,7 +37,7 @@ class BookingScreen extends StatefulWidget {
 }
 
 class _BookingScreenState extends State<BookingScreen> {
-  bool _isCheckingAuth = true; // متغير للتحقق من حالة الدخول
+  bool _isCheckingAuth = true; 
   bool _isLoggedIn = false;
   
   String currentUserName = '';
@@ -44,16 +53,13 @@ class _BookingScreenState extends State<BookingScreen> {
   late String selectedCategory;
   late List<Map<String, dynamic>> categoriesList;
 
-  final String driverName = 'أبو أحمد الحمصي';
-  final String driverPhone = '+963 933 123 456';
-
   String selectedPaymentMethod = 'الدفع عند الصعود';
   final String scriptUrl = 'https://script.google.com/macros/s/AKfycbycasw7Usvui5S2UO5m3mRDONR9FBFS7qFzB1PHEXw2dd4tIRynDCA6VSqvXLct5Ghs/exec';
 
   @override
   void initState() {
     super.initState();
-    _checkAuthenticationAndLoadData(); // التحقق الصارم من تسجيل الدخول أولاً
+    _checkAuthenticationAndLoadData();
     
     double basePrice = double.tryParse(widget.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 70000;
     double businessPrice = basePrice + 30000;
@@ -76,13 +82,11 @@ class _BookingScreenState extends State<BookingScreen> {
     selectedCategory = categoriesList[0]['key'];
   }
 
-  // دالة لفحص هل المستخدم مسجل دخول حقاً من الذاكرة المحلية
   Future<void> _checkAuthenticationAndLoadData() async {
     final prefs = await SharedPreferences.getInstance();
     bool loggedIn = prefs.getBool('isLoggedIn') ?? false;
     
     if (!loggedIn) {
-      // إذا لم يكن مسجل دخول، نوقف التحميل ونعلمه أو نخرجه فوراً
       setState(() {
         _isLoggedIn = false;
         _isCheckingAuth = false;
@@ -90,7 +94,6 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
-    // إذا كان مسجل دخول، نجلب بياناته الحقيقية
     setState(() {
       _isLoggedIn = true;
       currentUserName = prefs.getString('userName') ?? prefs.getString('passenger_name') ?? '';
@@ -135,7 +138,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. إذا كان النظام ما زال يتحقق من حالة الدخول، نظهر شاشة تحميل مؤقتة
     if (_isCheckingAuth) {
       return Scaffold(
         appBar: AppBar(backgroundColor: Colors.blue[900]),
@@ -143,7 +145,6 @@ class _BookingScreenState extends State<BookingScreen> {
       );
     }
 
-    // 2. إذا لم يكن مسجل دخول أبداً، نمنع عرض صفحة الحجز ونظهر رسالة أو نوجهه لتسجيل الدخول
     if (!_isLoggedIn) {
       return Scaffold(
         appBar: AppBar(
@@ -181,7 +182,6 @@ class _BookingScreenState extends State<BookingScreen> {
       );
     }
 
-    // 3. إذا كان مسجل دخول وصحيح 100%، تعرض شاشة الحجز الطبيعية تماماً
     final currentCategoryData = categoriesList.firstWhere(
       (cat) => cat['key'] == selectedCategory,
       orElse: () => categoriesList[0],
@@ -229,6 +229,7 @@ class _BookingScreenState extends State<BookingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // بطاقة تفاصيل الرحلة والسائق مقسمة لليمين واليسار بدقة
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -236,31 +237,69 @@ class _BookingScreenState extends State<BookingScreen> {
                     borderRadius: BorderRadius.circular(15),
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))],
                   ),
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('موعد الرحلة: ${widget.tripTime}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          Text('المركبة: ${widget.busNumber}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue[800])),
-                        ],
+                      // الجهة اليسرى: معلومات الرحلة بالتنسيق المطلوب تماماً
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'اسم الرحلة: ${widget.routeName}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blueAccent),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'معرف الرحلة: ${widget.tripId}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'تاريخ الرحلة: ${widget.tripDate}',
+                              style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'موعد الانطلاق: ${widget.tripTime}',
+                              style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            ),
+                          ],
+                        ),
                       ),
-                      const Divider(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('إجمالي المقاعد: ${reverseNumbers(widget.totalSeats.toString())}', style: const TextStyle(fontSize: 14)),
-                          Text('المقاعد المتاحة: ${reverseNumbers(widget.availableSeats.toString())}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('السائق: $driverName', style: const TextStyle(fontSize: 14)),
-                          Text('الهاتف: ${reverseNumbers(driverPhone)}', style: const TextStyle(fontSize: 14, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
-                        ],
+                      const SizedBox(width: 12),
+                      // الجهة اليمنى: معلومات الباص والسائق الحقيقية
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'المركبة: ${widget.busNumber}',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.blue[800]),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'المقاعد المتاحة: ${widget.availableSeats}',
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'إجمالي المقاعد: ${widget.totalSeats}',
+                              style: const TextStyle(fontSize: 14, color: Colors.black54),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'السائق: ${widget.driverName}',
+                              style: const TextStyle(fontSize: 14, color: Colors.black87),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'الهاتف: ${widget.driverPhone}',
+                              style: const TextStyle(fontSize: 13, color: Colors.blueGrey, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -469,11 +508,11 @@ class _BookingScreenState extends State<BookingScreen> {
                           children: [
                             Text('👤 اسم الراكب: $passengerName'),
                             const SizedBox(height: 6),
-                            Text('📱 رقم الهاتف: ${reverseNumbers(passengerPhone)}'),
+                            Text('📱 رقم الهاتف: $passengerPhone'),
                             const SizedBox(height: 6),
-                            Text('🚌 الرحلة والـ ID: ${widget.tripId} (${widget.busNumber})'),
+                            Text('🚌 الرحلة: ${widget.routeName} (${widget.tripId})'),
                             const SizedBox(height: 6),
-                            Text('⏰ الموعد: ${widget.tripTime}'),
+                            Text('⏰ الموعد: ${widget.tripDate} - ${widget.tripTime}'),
                             const SizedBox(height: 6),
                             Text('🎫 الفئة: $selectedCategory (عدد المقاعد: $selectedSeatCount)'),
                             const SizedBox(height: 6),
@@ -481,7 +520,7 @@ class _BookingScreenState extends State<BookingScreen> {
                             const SizedBox(height: 6),
                             Text('💳 الدفع: $selectedPaymentMethod'),
                             const SizedBox(height: 6),
-                            Text('👨‍✈️ السائق: $driverName (${reverseNumbers(driverPhone)})'),
+                            Text('👨‍✈️ السائق: ${widget.driverName} (${widget.driverPhone})'),
                             const Divider(height: 20),
                             const Text('تم تسجيل الحجز بنجاح في النظام وخصم المقاعد. رافقتكم السلامة!', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           ],

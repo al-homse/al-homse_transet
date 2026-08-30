@@ -170,7 +170,7 @@ class _TripScreenState extends State<TripScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => TripScreen(
                                         routeName: route,
-                                        isLoggedIn: widget.isLoggedIn, // تمرير الحالة للأمام
+                                        isLoggedIn: widget.isLoggedIn,
                                       ),
                                     ),
                                   );
@@ -318,7 +318,6 @@ class _TripScreenState extends State<TripScreen> {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                 ),
-                                // التحقق الصارم: إذا لم يكن مسجلاً، أظهر رسالة التنبيه حصراً
                                 onPressed: isFull
                                     ? null
                                     : () {
@@ -348,17 +347,21 @@ class _TripScreenState extends State<TripScreen> {
                                             ),
                                           );
                                         } else {
-                                          // إذا كان مسجلاً دخول مسبقاً، انتقل لشاشة الحجز مباشرة
+                                          // الانتقال لشاشة الحجز مع تمرير البيانات الحقيقية كاملة للشيت والسائق
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => BookingScreen(
                                                 tripId: tripId,
-                                                tripTime: "$tripDate - $departureTime",
+                                                tripTime: departureTime,
                                                 busNumber: vehicleId,
                                                 price: price,
                                                 availableSeats: availableSeats,
                                                 totalSeats: totalSeats,
+                                                routeName: trip['route']?.toString() ?? widget.routeName ?? '',
+                                                tripDate: tripDate,
+                                                driverName: trip['driver_name']?.toString() ?? 'غير محدد',
+                                                driverPhone: trip['phone_driver']?.toString() ?? 'غير محدد',
                                               ),
                                             ),
                                           );
