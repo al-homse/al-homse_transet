@@ -93,14 +93,14 @@ class _AppDrawerState extends State<AppDrawer> {
             },
           ),
 
-          // رحلاتي
+          // رحلاتي (تم تعديل الاستدعاء ليطابق بناء الشاشة بدون معاملات)
           ListTile(
             leading: const Icon(Icons.directions_bus, color: Colors.blue),
             title: const Text('رحلاتي'),
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => MyTripsScreen(userPhone: _userPhone)),
+                MaterialPageRoute(builder: (context) => const MyTripsScreen()),
               );
             },
           ),
