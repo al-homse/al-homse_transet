@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';   
 import 'booking_screen.dart'; 
 import '../api_service.dart';
-import 'app_drawer.dart'; // استيراد القائمة الجانبية
+import 'app_drawer.dart';
 
 class TripScreen extends StatefulWidget {
   final String? routeName; 
-  final bool isLoggedIn; // متغير لحفظ حالة تسجيل الدخول القادمة من الخارج
+  final bool isLoggedIn; // مؤشر حالة تسجيل الدخول
 
   const TripScreen({Key? key, this.routeName, this.isLoggedIn = false}) : super(key: key);
 
@@ -23,7 +23,6 @@ class _TripScreenState extends State<TripScreen> {
     _loadTrips();
   }
 
-  // دالة لجلب الرحلات وإتاحة إمكانية التحديث اليدوي
   void _loadTrips() {
     setState(() {
       _tripsFuture = ApiService.fetchTrips();
@@ -32,9 +31,6 @@ class _TripScreenState extends State<TripScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // الاعتماد على الحالة الحقيقية المُستقبلة بدلاً من القيمة الثابتة
-    bool isLoggedIn = widget.isLoggedIn;
-
     return FutureBuilder<List<dynamic>>(
       future: _tripsFuture,
       builder: (context, snapshot) {
@@ -66,7 +62,7 @@ class _TripScreenState extends State<TripScreen> {
 
         List<dynamic> allTrips = snapshot.data ?? [];
 
-        // الحالة الأولى: قائمة الخطوط
+        // الحالة الأولى: عرض خطوط السفر
         if (widget.routeName == null) {
           List<String> availableRoutes = allTrips
               .map((trip) => trip['route']?.toString() ?? '')
@@ -174,7 +170,7 @@ class _TripScreenState extends State<TripScreen> {
                                     MaterialPageRoute(
                                       builder: (context) => TripScreen(
                                         routeName: route,
-                                        isLoggedIn: isLoggedIn,
+                                        isLoggedIn: widget.isLoggedIn, // تمرير الحالة للأمام
                                       ),
                                     ),
                                   );
@@ -192,7 +188,7 @@ class _TripScreenState extends State<TripScreen> {
           );
         }
 
-        // الحالة الثانية: جدول المواعيد للخط المحدد
+        // الحالة الثانية: عرض جدول المواعيد للخط المحدد
         List<dynamic> filteredTrips = allTrips
             .where((trip) => trip['route']?.toString() == widget.routeName)
             .toList();
@@ -242,7 +238,6 @@ class _TripScreenState extends State<TripScreen> {
                         
                         String tripId = trip['trip_id']?.toString() ?? 'TRP-001';
                         
-                        // معالجة التاريخ والوقت
                         String rawDate = trip['trip_date']?.toString() ?? '';
                         String tripDate = rawDate.contains('T') ? rawDate.split('T')[0] : rawDate;
 
@@ -323,11 +318,11 @@ class _TripScreenState extends State<TripScreen> {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                 ),
-                                // إذا كانت الرحلة ممتلئة نعطل الزر، وإذا لم يكن مسجلاً للدخول نظهر رسالة التنبيه عند الضغط
+                                // التحقق الصارم: إذا لم يكن مسجلاً، أظهر رسالة التنبيه حصراً
                                 onPressed: isFull
                                     ? null
                                     : () {
-                                        if (!isLoggedIn) {
+                                        if (!widget.isLoggedIn) {
                                           showDialog(
                                             context: context,
                                             builder: (context) => AlertDialog(
@@ -353,6 +348,7 @@ class _TripScreenState extends State<TripScreen> {
                                             ),
                                           );
                                         } else {
+                                          // إذا كان مسجلاً دخول مسبقاً، انتقل لشاشة الحجز مباشرة
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(

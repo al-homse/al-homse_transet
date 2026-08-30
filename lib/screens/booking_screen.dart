@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'app_drawer.dart'; // استيراد القائمة الجانبية
+import 'app_drawer.dart';
 
 class BookingScreen extends StatefulWidget {
-  final String tripId;          // معرف الرحلة الفعلي (مثل TRP-001)
+  final String tripId;          
   final String tripTime;
   final String busNumber;
-  final String price;           // السعر القادم من قاعدة البيانات
-  final int availableSeats;     // المقاعد المتاحة ديناميكياً من الجدول
-  final int totalSeats;         // إجمالي المقاعد للرحلة
-  final String currentUserName; // اسم المستخدم المسجل حالياً
-  final String currentUserPhone;// رقم هاتف المستخدم المسجل حالياً
+  final String price;           
+  final int availableSeats;     
+  final int totalSeats;         
+  final String currentUserName; 
+  final String currentUserPhone;
 
   const BookingScreen({
     Key? key,
@@ -32,7 +32,7 @@ class BookingScreen extends StatefulWidget {
 class _BookingScreenState extends State<BookingScreen> {
   int bookingStep = 1;
   String bookingType = 'self';
-  int selectedSeatCount = 1; // عدد المقاعد المطلوب حجزها
+  int selectedSeatCount = 1; 
 
   final TextEditingController _otherNameController = TextEditingController();
   final TextEditingController _otherPhoneController = TextEditingController();
@@ -43,18 +43,18 @@ class _BookingScreenState extends State<BookingScreen> {
   final String driverName = 'أبو أحمد الحمصي';
   final String driverPhone = '+963 933 123 456';
 
-  // رابط النشر الخاص بالسكريبت الخاص بك
+  // تعريف متغير طريقة الدفع هنا لتجنب الأخطاء
+  String selectedPaymentMethod = 'الدفع عند الصعود';
+
   final String scriptUrl = 'https://script.google.com/macros/s/AKfycbycasw7Usvui5S2UO5m3mRDONR9FBFS7qFzB1PHEXw2dd4tIRynDCA6VSqvXLct5Ghs/exec';
 
   @override
   void initState() {
     super.initState();
     
-    // تنظيف وتحويل السعر القادم من قاعدة البيانات
     double basePrice = double.tryParse(widget.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 70000;
     double businessPrice = basePrice + 30000;
 
-    // تجهيز قائمة الفئات ديناميكياً
     categoriesList = [
       {
         'key': 'Standard',
@@ -77,7 +77,6 @@ class _BookingScreenState extends State<BookingScreen> {
     return input.split('').reversed.join('');
   }
 
-  // دالة إرسال الحجز إلى جوجل شيت
   Future<void> sendBookingToGoogleSheet({
     required String passengerName,
     required String passengerPhone,
@@ -135,7 +134,6 @@ class _BookingScreenState extends State<BookingScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      // ربط القائمة الجانبية هنا ببيانات المستخدم الحالية
       drawer: AppDrawer(
         userName: widget.currentUserName,
         userPhone: widget.currentUserPhone,
@@ -158,7 +156,6 @@ class _BookingScreenState extends State<BookingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. معلومات الرحلة الأساسية الديناميكية
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -197,7 +194,6 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 2. خطوة اختيار لمن الحجز
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -258,7 +254,6 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 3. القائمة المنسدلة لعدد المقاعد المطلوبة
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -290,7 +285,6 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 4. القائمة المنسدلة للفئات والأسعار
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
@@ -323,7 +317,6 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // 5. خيارات الدفع
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -359,7 +352,6 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 6. زر تأكيد الحجز النهائي
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[900],
@@ -442,7 +434,6 @@ class _BookingScreenState extends State<BookingScreen> {
                 
                 const SizedBox(height: 12),
 
-                // زر العودة للشاشة الرئيسية
                 TextButton.icon(
                   onPressed: () {
                     Navigator.popUntil(context, (route) => route.isFirst);
@@ -460,6 +451,4 @@ class _BookingScreenState extends State<BookingScreen> {
       ),
     );
   }
-
-  String selectedPaymentMethod = 'الدفع عند الصعود';
 }

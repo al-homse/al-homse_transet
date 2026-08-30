@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // مكتبة التخزين المحلي
+import 'package:shared_preferences/shared_preferences.dart';
 import 'register_screen.dart';
 import 'admin_dashboard.dart';
 import '../api_service.dart';
@@ -19,16 +19,15 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // 1. تم تعديل الدالة لاستقبال وحفظ customer_id وباقي بيانات الحساب محلياً
   Future<void> _saveUserSession(String name, String phone, String customerId, String totalTrips, String preferredClass) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', true);
-    await prefs.setString('customer_status', 'LoggedIn'); // لتظهر حالة الحساب نشط ومفعل
+    await prefs.setString('customer_status', 'LoggedIn');
     await prefs.setString('userName', name);
     await prefs.setString('passenger_name', name);
     await prefs.setString('userPhone', phone);
     await prefs.setString('phone_number', phone);
-    await prefs.setString('customer_id', customerId); // << حفظ الـ ID هنا بدقة
+    await prefs.setString('customer_id', customerId);
     await prefs.setString('total_trips', totalTrips);
     await prefs.setString('preferred_class', preferredClass);
   }
@@ -67,13 +66,10 @@ class _LoginScreenState extends State<LoginScreen> {
       String message = response['message'] ?? 'حدث خطأ ما';
 
       if (status == 'success') {
-        // استخراج البيانات القادمة من الـ API / Google Sheet
-        // تأكد من مفاتيح الاستجابة بحسب ما يرسله الـ ApiService لديك
         String customerId = response['customer_id'] ?? response['id'] ?? '---';
         String totalTrips = response['total_trips']?.toString() ?? '0';
         String preferredClass = response['preferred_class'] ?? 'VIP';
 
-        // حفظ كافة بيانات الجلسة بما فيها الـ ID الحقيقي
         await _saveUserSession(inputName, inputPhone, customerId, totalTrips, preferredClass);
 
         ScaffoldMessenger.of(context).showSnackBar(
