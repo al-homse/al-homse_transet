@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart'; // استدعاء التخزين المحلي
 import 'app_drawer.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -10,8 +11,6 @@ class BookingScreen extends StatefulWidget {
   final String price;           
   final int availableSeats;     
   final int totalSeats;         
-  final String currentUserName; 
-  final String currentUserPhone;
 
   const BookingScreen({
     Key? key,
@@ -21,8 +20,6 @@ class BookingScreen extends StatefulWidget {
     required this.price,
     required this.availableSeats,
     required this.totalSeats,
-    this.currentUserName = 'عادل',
-    this.currentUserPhone = '+963 999 000 111',
   }) : super(key: key);
 
   @override
@@ -37,13 +34,16 @@ class _BookingScreenState extends State<BookingScreen> {
   final TextEditingController _otherNameController = TextEditingController();
   final TextEditingController _otherPhoneController = TextEditingController();
 
+  // متغيرات لجلب البيانات الحقيقية للمستخدم من الذاكرة
+  String currentUserName = 'جاري التحميل...';
+  String currentUserPhone = '';
+
   late String selectedCategory;
   late List<Map<String, dynamic>> categoriesList;
 
   final String driverName = 'أبو أحمد الحمصي';
   final String driverPhone = '+963 933 123 456';
 
-  // تعريف متغير طريقة الدفع هنا لتجنب الأخطاء
   String selectedPaymentMethod = 'الدفع عند الصعود';
 
   final String scriptUrl = 'https://script.google.com/macros/s/AKfycbycasw7Usvui5S2UO5m3mRDONR9FBFS7qFzB1PHEXw2dd4tIRynDCA6VSqvXLct5Ghs/exec';
@@ -51,6 +51,7 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
+    _loadUserData(); // جلب البيانات الحقيقية فور فتح الشاشة
     
     double basePrice = double.tryParse(widget.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 70000;
     double businessPrice = basePrice + 30000;
@@ -71,6 +72,15 @@ class _BookingScreenState extends State<BookingScreen> {
     ];
 
     selectedCategory = categoriesList[0]['key'];
+  }
+
+  // دالة لجلب البيانات الحقيقية من SharedPreferences بدون أي قيم وهمية
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      currentUserName = prefs.getString('userName') ?? prefs.getString('passenger_name') ?? 'زائر';
+      currentUserPhone = prefs.getString('userPhone') ?? prefs.getString('phone_number') ?? '';
+    });
   }
 
   String reverseNumbers(String input) {
@@ -118,8 +128,8 @@ class _BookingScreenState extends State<BookingScreen> {
     double totalPriceNumeric = unitPrice * selectedSeatCount;
     String finalPriceDisplay = '${totalPriceNumeric.toStringAsFixed(0)} ل.س';
 
-    String passengerName = (bookingType == 'self') ? widget.currentUserName : _otherNameController.text;
-    String passengerPhone = (bookingType == 'self') ? widget.currentUserPhone : _otherPhoneController.text;
+    String passengerName = (bookingType == 'self') ? currentUserName : _otherNameController.text;
+    String passengerPhone = (bookingType == 'self') ? currentUserPhone : _otherPhoneController.text;
 
     int maxAvailableSeats = widget.availableSeats > 0 ? widget.availableSeats : 1;
     if (selectedSeatCount > maxAvailableSeats) {
@@ -135,8 +145,8 @@ class _BookingScreenState extends State<BookingScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       drawer: AppDrawer(
-        userName: widget.currentUserName,
-        userPhone: widget.currentUserPhone,
+        userName: currentUserName,
+        userPhone: currentUserPhone,
       ),
       body: Stack(
         children: [
@@ -205,7 +215,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       const Text('لمن يتم حجز هذا المقعد؟', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                       RadioListTile<String>(
-                        title: Text('الحجز لنفسي (${widget.currentUserName} - ${widget.currentUserPhone})'),
+                        title: Text('الحجز لنفسي ($currentUserName - $currentUserPhone)'),
                         value: 'self',
                         groupValue: bookingType,
                         onChanged: (value) {
