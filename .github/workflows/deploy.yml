@@ -25,4 +25,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: 'alhomse-transet'
-          directory: 'build/web'
+          directory: 'build/web' 
